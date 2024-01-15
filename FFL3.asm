@@ -240,8 +240,6 @@ MetatileAttr:
 .SECTION "LoadBufferToStage_Code" FREE
  LoadBufferToStage: ;TODO: Once we start doing actual tile data this will need to be a different call
 	push hl
-	push de
-	push bc
 	push af
 	inc d ;C9 block instead of C8
 	
@@ -254,9 +252,8 @@ _loop:
 	ld a, (de)
 	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
 
+	dec d
 	pop af
-	pop bc
-	pop de
 	pop hl
 	
 	;Currently this just replicates the three bytes that the call above overwrote
@@ -272,19 +269,18 @@ _loop:
 
 .BANK $00 SLOT 0
 .ORG $3766
-.SECTION "HookLoadMapVRAMRow" OVERWRITE
-	call LoadMapVRAM
+.SECTION "HookUpdateMapVRAMRow" OVERWRITE
+	call UpdateMapVRAM
 .ENDS
 .ORG $3777
-.SECTION "HookLoadMapVRAMCol" OVERWRITE
-	call LoadMapVRAM
+.SECTION "HookUpdateMapVRAMCol" OVERWRITE
+	call UpdateMapVRAM
 .ENDS
 
 .BANK $00 SLOT 0
-.SECTION "LoadMapVRAMCode" FREE
-LoadMapVRAM:
+.SECTION "UpdateMapVRAMCode" FREE
+UpdateMapVRAM:
 	push hl
-	push de
 	push af
 	ld a, 1
 	ldh (<VBK), a
@@ -302,12 +298,52 @@ LoadMapVRAM:
 	ldh (<VBK), a
 	
 	pop af
-	pop de
 	pop hl
 	
 	;Currently this just replicates the three bytes that the call above overwrote
 	ldi a, (hl)
 	ld (de), a
 	ld a, e
+	ret
+.ENDS
+
+;794f clear screen?
+
+;0E97 load map buffer from 4710?
+;0EF5 load vram from buffer?
+.BANK $00 SLOT 0
+.ORG $0E97
+.SECTION "HookLoadMapVRAMRow" OVERWRITE
+	call LoadMetatileRowToBuffer
+.ENDS
+.ORG $0EF5
+.SECTION "HookLoadBufferToStageRow" OVERWRITE
+	call LoadBufferToVRAM
+.ENDS
+
+.SECTION "LoadBufferToVRAM_Code" FREE
+ LoadBufferToVRAM:
+	push hl
+	push af
+	inc d ;C9 block instead of C8
+		
+	ld a, 1
+	ldh (<VBK), a
+
+_loop:
+	ld a, (de)
+	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
+
+	dec d
+	pop af
+	pop hl
+	
+	ld a, 0
+	ldh (<VBK), a
+	
+	;Currently this just replicates the three bytes that the call above overwrote
+	ld a, (de)
+	ld (hl), a
+	inc de
 	ret
 .ENDS
