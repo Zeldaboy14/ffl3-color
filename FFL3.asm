@@ -127,7 +127,7 @@ MetatileAttr:
 ;Game draws 24 tiles into the vram bg map for columns or rows, rather than all 32
 
 ;Writes Metatile data into first output buffer
-;0a79 = load metatile to c880 when moving right
+;0a78 = load metatile to c880 when moving right
 ;0b2c = load metatile to c880 when moving left
 ;0a79~0aac is identical to 0b2d~0b60
 ;0be0 = load metatile to c880 when moving up
@@ -137,37 +137,82 @@ MetatileAttr:
 .BANK 0 SLOT 0
 .ORG $0A78
 .SECTION "LoadMetatileToBufferRight_Hook" OVERWRITE
-	call LoadMetatileToBuffer
+	call LoadMetatileColumnToBuffer
 .ENDS
 .ORG $0B2C
 .SECTION "LoadMetatileToBufferLeft_Hook" OVERWRITE
-	call LoadMetatileToBuffer
+	call LoadMetatileColumnToBuffer
 .ENDS
 .ORG $0BE0
 .SECTION "LoadMetatileToBufferUp_Hook" OVERWRITE
-	call LoadMetatileToBuffer
+	call LoadMetatileRowToBuffer
 .ENDS
 .ORG $0C99
 .SECTION "LoadMetatileToBufferDown_Hook" OVERWRITE
-	call LoadMetatileToBuffer
+	call LoadMetatileRowToBuffer
 .ENDS
 
-.BANK $00 SLOT 0
-.SECTION "LoadMetatileToBuffer_Code" FREE
- LoadMetatileToBuffer:
+.SECTION "LoadMetatileColumnToBuffer_Code" FREE
+ LoadMetatileRowToBuffer:
 	push hl
+	push de
 	push bc
 	push af
-	ld hl, $C900
-	ld a, 24
-	ld c, a
-_loop:
-	ld a, 1
-	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
-	dec c
-	jp nz, _loop
+	inc h ;C9 block instead of C8
+	
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ldi (hl), a
+	inc de
+	inc de
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ld (hl), a
+	dec de
+	ld bc, $0017
+	add hl, bc
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ldi (hl), a
+	inc de
+	inc de
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ld (hl), a
+
 	pop af
 	pop bc
+	pop de
+	pop hl
+
+	;Replicates the three bytes that this call replaced above
+	ld a, (de)
+	ldi (hl), a
+	inc de
+	ret
+.ENDS
+
+.SECTION "LoadMetatileRowToBuffer_Code" FREE
+ LoadMetatileColumnToBuffer:
+	push hl
+	push de
+	push bc
+	push af
+	inc h ;C9 block instead of C8
+	
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ldi (hl), a
+	inc de
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ld (hl), a
+	inc de
+	ld bc, $0015
+	add hl, bc
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ldi (hl), a
+	inc de
+	ld a, 1 ;Todo: Replace this with useful color data from someplace!
+	ld (hl), a
+
+	pop af
+	pop bc
+	pop de
 	pop hl
 
 	;Replicates the three bytes that this call replaced above
@@ -184,35 +229,36 @@ _loop:
 .BANK 0 SLOT 0
 .ORG $396D
 .SECTION "LoadBufferToStageRow_Hook" OVERWRITE
-	call LoadBufferToStageRow
+	call LoadBufferToStage
 .ENDS
 .ORG $399C
 .SECTION "LoadBufferToStageCol_Hook" OVERWRITE
-	call LoadBufferToStageCol
+	call LoadBufferToStage
 .ENDS
 
 .BANK $00 SLOT 0
-.SECTION "LoadBufferToStageRow_Code" FREE
- LoadBufferToStageCol:
- LoadBufferToStageRow: ;TODO: Once we start doing actual tile data this will need to be a different call
+.SECTION "LoadBufferToStage_Code" FREE
+ LoadBufferToStage: ;TODO: Once we start doing actual tile data this will need to be a different call
 	push hl
 	push de
 	push bc
 	push af
-	ld de, $C900
-	ld hl, $C120
-	ld a, 24
-	ld c, a
+	inc d ;C9 block instead of C8
+	
+	;Add $80 for attributes
+	ld a, l
+	add a, $80
+	ld l, a
+	
 _loop:
 	ld a, (de)
 	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
-	inc de
-	dec c
-	jp nz, _loop
+
 	pop af
 	pop bc
 	pop de
 	pop hl
+	
 	;Currently this just replicates the three bytes that the call above overwrote
 	ld a, (de)
 	ldi (hl), a
@@ -223,50 +269,39 @@ _loop:
 ;Write tile data into VRAM
 ;3766 = load bg tile row ids into vram from C103~C11A
 ;3777 = load bg tile col ids into vram from C103~C11A
-;0EF5 = same?
-;7C79
 
 .BANK $00 SLOT 0
 .ORG $3766
 .SECTION "HookLoadMapVRAMRow" OVERWRITE
-	call LoadMapVRAMRow
+	call LoadMapVRAM
 .ENDS
 .ORG $3777
 .SECTION "HookLoadMapVRAMCol" OVERWRITE
-	call LoadMapVRAMRow
+	call LoadMapVRAM
 .ENDS
 
 .BANK $00 SLOT 0
-.SECTION "LoadMapVRAMRowCode" FREE
- LoadMapVRAMRow:
+.SECTION "LoadMapVRAMCode" FREE
+LoadMapVRAM:
 	push hl
 	push de
-	push bc
 	push af
 	ld a, 1
 	ldh (<VBK), a
-	ld hl, $C120
-_loop:
+
+	;Add $80 for attributes
+	ld a, l
+	add a, $80
+	ld l, a
+
 	ldi a, (hl)
 	ld (de), a
 	ld a, e
-	add a, $20
-	ld e, a
-	ld a, d
-	adc a, $00
-	and a, $03
-	or a, $98
-	ld d, a
-	dec b
-	jr nz, _loop
 
 	ld a, 0
 	ldh (<VBK), a
-
-	WAITBLANK
 	
 	pop af
-	pop bc
 	pop de
 	pop hl
 	
