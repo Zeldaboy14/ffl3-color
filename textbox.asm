@@ -25,6 +25,8 @@ _loop:
 
 	ld a, 0
 	ldh (<VBK), a
+	
+	WAITBLANK
 
 	pop hl
 	pop bc
