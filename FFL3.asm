@@ -27,6 +27,7 @@
 .include "map.asm"
 .include "textbox.asm"
 .include "font.asm"
+.include "fade.asm"
 
 .BANK 0 SLOT 0
 .ORG $0201
@@ -112,10 +113,10 @@
 
 ;00000 Main code
 ;04000 Unknown
-;08000 Metatile and map data?
+;08000 Art
 ;0c000 font, etc
-;10000 Unknown
-;14000 Unknown
+;10000 Sprites
+;14000 Tiles
 ;18000 Metatile and map data?
 ;1C000 Metatile and map data?
 ;20000 Metatile and map data?
