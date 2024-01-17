@@ -12,6 +12,8 @@ FadeOut:
 	push de
 	push hl
 	
+	di
+
 	ld a, l
 	sub a, $b4
 	jr nc, _notzero
@@ -21,12 +23,11 @@ _notzero:
 	srl a
 	inc a
 	ld c, a
+		
+	ld a, WRAM_PALETTE_BANK
+	ldh (<SVBK), a
 	
-    ld hl, InitBGPal
-	
-	;0 10110 10110 10110
-	;0 01011 01011 01011
-	;0 00101 00001 00101
+    ld hl, WRAM_BGPALETTE_ADDR
 
 	ld a, $80            ; Set index to first color + auto-increment
     ldh (<BCPS),a       
@@ -62,6 +63,11 @@ _done:
 
     dec b
     jr nz,_LoopBGPAL
+	
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+
+	ei
 
 	pop hl
 	pop de

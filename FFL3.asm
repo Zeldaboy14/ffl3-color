@@ -23,6 +23,9 @@
 
 .include "definitions.asm"		; Definitions
 .include "macros.asm"			; Macros 
+.include "palettes.asm"
+.include "system.asm"
+
 .include "metatileattr.asm"
 .include "map.asm"
 .include "textbox.asm"
@@ -37,73 +40,22 @@
 
 .BANK $00 SLOT 0
 .SECTION "Init" FREE
- DxInit:
-	push af
+DxInit:
+	;Set Fast CPU from main bank
 	ld a, 1
 	ldh ($4D), a
 	stop
 	nop
-	pop af
 
-    push hl
-    ld hl,InitBGPal
-    call SET_BGPAL
-    ld hl,InitOBJPal
-    call SET_OBJPAL
-    pop hl
+	ld a, 0x10
+	ld (CHANGE_BANK), a
+
+	call InitializePalettes
+
+	ld a, 0x1
+	ld (CHANGE_BANK), a
+
     call $374A          ; Replaced code
-    ret
- InitBGPal:
-    .db $D6,$5A,$FF,$7F,$5A,$6B,$00,$00
-	.db $DC,$22,$0A,$10,$96,$11,$00,$00
-	.db $2A,$2A,$76,$53,$51,$23,$0A,$01
-	.db $53,$73,$96,$6B,$2D,$6A,$00,$41
-	.db $0C,$11,$5C,$53,$14,$32,$0A,$01
-	.db $56,$3A,$9E,$6B,$1A,$5B,$00,$00
-	.db $53,$73,$FF,$7F,$2D,$6A,$00,$00
-	.db $08,$21,$00,$40,$D6,$5A,$FF,$7F
- InitOBJPal:
-    .db $FF,$1F,$77,$1F,$C0,$71,$00,$00
-    .db $FF,$1F,$77,$1F,$C0,$71,$00,$00
-    .db $FF,$1F,$77,$1F,$C0,$71,$00,$00
-.ENDS
-
-.BANK 0 SLOT 0
-.SECTION "BasicFunctions" FREE
- ; **SET BACKGROUND PALETTES**
- ; Writes $40 bytes located at HL to the BG Palette.
- SET_BGPAL:
-    ld a,$80            ; Set index to first color + auto-increment
-    ldh (<BCPS),a       
-    ld b,64             ; 64=0x40 bytes
-    
- ; Checks if $FF69 is accessible:
- LoopBGPAL:
-    WAITBLANK
-    
-    ; Sets BG Palettes:
-    ldi a,(hl)
-    ldh (<BCPD),a
-    dec b
-    jr nz,LoopBGPAL
-    ret
-
- ; **SET SPRITE PALETTES**
- ; Same as before but with the Sprites/OBJ Palette. 
- SET_OBJPAL:
-    ld a, $80           ; Set index to first color + auto-increment
-    ldh (<OCPS), a  ; 
-    ld b, 64                ; 64=0x40 bytes
-    
- ; Checks if $FF69 is accessible:
- LoopOBJPAL:
-    WAITBLANK
-    
-    ; Sets OBJ Palettes:
-    ldi a,(hl)
-    ldh (<OCPD),a
-    dec b
-    jr nz,LoopOBJPAL
     ret
 .ENDS
 

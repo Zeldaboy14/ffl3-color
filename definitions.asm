@@ -9,6 +9,12 @@
 .DEFINE OCPS $FF6A				; Sprite Palette Index (GBC)
 .DEFINE OCPD $FF6B				; Sprite Palette Data (GBC)
 
+.DEFINE ROM0 $0000
+.DEFINE ROM1 $4000
+.DEFINE WRAM0 $C000
+.DEFINE WRAM1 $D000
+
+
 ; Constants
 .DEFINE CHANGE_BANK				$2100
 
