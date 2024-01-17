@@ -1,27 +1,41 @@
 .DEFINE WRAM_DEFAULT_BANK		0x01
 .DEFINE WRAM_PALETTE_BANK 		0x02
 .DEFINE WRAM_PALETTE_ADDR 		WRAM1
-.DEFINE WRAM_BGPALETTE_ADDR 	WRAM1 + (InitialBGPal - ROM1)
-.DEFINE WRAM_OBJPALETTE_ADDR 	WRAM1 + (InitialOBJPal - ROM1)
-
+.DEFINE WRAM_PALETTE_SIZE		0x40
+.DEFINE WRAM_PALETTE_FADECOUNT	0x4
+.DEFINE WRAM_BGPALETTE_ADDR 	WRAM1
+.DEFINE WRAM_OBJPALETTE_ADDR 	WRAM1 + WRAM_PALETTE_SIZE * WRAM_PALETTE_FADECOUNT
 
 .BANK $10 SLOT 1
 .SECTION "System_Code" FREE	
 InitializePalettes:
-	ld hl, InitialPal
-	ld c, InitialPalEnd - InitialPal
-	ld de, WRAM_PALETTE_ADDR
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
-_InitPaletteLoop:
+
+	ld hl, InitialBGPal
+	ld c, WRAM_PALETTE_SIZE
+	ld de, WRAM_PALETTE_ADDR
+_InitBGPaletteLoop:
 	ldi a, (hl)
 	ld (de), a
 	inc de
 	dec c
-	jp nz, _InitPaletteLoop
+	jp nz, _InitBGPaletteLoop
+
+	ld hl, InitialOBJPal
+	ld c, WRAM_PALETTE_SIZE
+	ld de, WRAM_OBJPALETTE_ADDR
+_InitOBJPaletteLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec c
+	jp nz, _InitOBJPaletteLoop
 	
     call InitializeBGPalettes
     call InitializeOBJPalettes
+	call InitializeBGFadeLookup
+	ret
 
 InitializeBGPalettes:
 	di
@@ -74,4 +88,91 @@ _OBJLoop:
 	POP_ALL
 	ei
     ret
+
+;Initialize BG fade lookup tables
+InitializeBGFadeLookup:
+	di
+	PUSH_ALL
+		
+	ld hl, WRAM_BGPALETTE_ADDR
+	ld a, WRAM_PALETTE_BANK
+	ldh (<SVBK), a
+	ld b, 32
+	ld c, 1	
+	call LoadFadeLevel
+	ld hl, WRAM_BGPALETTE_ADDR + (WRAM_PALETTE_SIZE * 2)
+	call LoadFadeBlack
+
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+
+	POP_ALL
+	ei
+	ret
+
+LoadFadeLevel:
+	PUSH_ALL
+	inc c
+
+_colorLoop:
+	ldi a, (hl)
+	ld e, a
+	ldi a, (hl)
+	ld d, a
+	push bc
+ _fadeLoop:
+	dec c
+	jp z, _fadeLoopDone
+	ld a, d
+	and a, $7B
+	srl a
+	ld d, a
+	ld a, e
+	rr a
+	and a, $EF
+	ld e, a
+	jr _fadeLoop
+_fadeLoopDone:
+	pop bc
+	push hl
+
+	;HL = (HL -+ (c - 1) * 0x40) - 2
+	ld a, c
+	dec a
+	swap a
+	sla a
+	sla a
+	add a, l
+	sub a, 2
+	ld l, a
+	
+	ld a, e
+    ldi (hl), a
+	ld a, d
+    ldi (hl), a
+	
+	pop hl
+
+    dec b
+    jr nz, _colorLoop
+	
+	POP_ALL
+	ret
+
+;Load black palette into cache.  Requires wram bank already set
+;@param HL	Target address
+LoadFadeBlack:
+	push af
+	push bc
+
+	ld b, WRAM_PALETTE_SIZE
+	ld a, 0
+@loop:
+	ldi (hl), a	
+    dec b
+    jr nz, @loop
+	
+	pop bc
+	pop af
+	ret
 .ENDS

@@ -21,46 +21,31 @@ FadeOut:
 _notzero:
 	srl a
 	srl a
-	inc a
 	ld c, a
 		
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
 	
+	;Load data from fade cache
     ld hl, WRAM_BGPALETTE_ADDR
+	;HL = HL + (c * 0x40)
+	ld a, c
+	swap a
+	sla a
+	sla a
+	add a, l
+	ld l, a
+	
+	inc c
 
 	ld a, $80            ; Set index to first color + auto-increment
     ldh (<BCPS),a       
-    ld b, 32             ; 32 color entries=0x40 bytes
+    ld b, 64             ; 32 color entries=0x40 bytes
 
 _LoopBGPAL:
-	ldi a, (hl)
-	ld e, a
-	ldi a, (hl)
-	ld d, a
-	push bc
- _loop:
-	dec c
-	jp z, _done
-	ld a, d
-	and a, $7B
-	srl a
-	ld d, a
-	ld a, e
-	rr a
-	and a, $EF
-	ld e, a
-	jr _loop
-_done:
 	WAITBLANK
-
-	ld a, e
+	ldi a, (hl)
     ldh (<BCPD),a
-	ld a, d
-    ldh (<BCPD),a
-
-	pop bc
-
     dec b
     jr nz,_LoopBGPAL
 	
