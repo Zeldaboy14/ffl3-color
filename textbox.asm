@@ -11,14 +11,14 @@ TextboxLoadLine:
 	push bc
 	push hl
 	
-	WAITBLANK
 	
 	ld a, 1
 	ldh (<VBK), a
 	
 	ld c, 14
-	ld a, 7
 _loop:
+	WAITBLANK
+	ld a, 7
 	ldi (hl), a
 	dec c
 	jr nz, _loop
@@ -26,8 +26,6 @@ _loop:
 	ld a, 0
 	ldh (<VBK), a
 	
-	WAITBLANK
-
 	pop hl
 	pop bc
 	pop af

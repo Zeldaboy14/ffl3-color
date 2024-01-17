@@ -18,6 +18,7 @@
 
 .BACKGROUND "Final Fantasy Legend III (USA).gb"        ; This loads the ROM so we can write directly into it
 .UNBACKGROUND $3E70 $3FFF       ; Free space in bank $00
+.UNBACKGROUND $2FF73 $2FFFF     ; Free space in bank $0B
 .UNBACKGROUND $3FFCE $3FFFF     ; Free space in bank $0F
 ; ...
 
@@ -31,6 +32,7 @@
 .include "textbox.asm"
 .include "font.asm"
 .include "fade.asm"
+.include "battle.asm"
 
 .BANK 0 SLOT 0
 .ORG $0201
@@ -71,7 +73,7 @@ DxInit:
 ;0c000 font, etc
 ;10000 Sprites
 ;14000 Tiles
-;18000 Metatile and map data?
+;18000 Metatile data (and map data?)
 ;1C000 Metatile and map data?
 ;20000 Metatile and map data?
 ;24000 Unknown
