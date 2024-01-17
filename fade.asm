@@ -13,57 +13,62 @@ FadeOut:
 	push hl
 	
 	ld a, l
-	sub a, $b0
+	sub a, $b4
 	jr nc, _notzero
 	ld a, 0
 _notzero:
 	srl a
 	srl a
-	add a, 1
-	ld d, a
-	ld e, a
+	inc a
+	ld c, a
 	
     ld hl, InitBGPal
+	
+	;0 10110 10110 10110
+	;0 01011 01011 01011
+	;0 00101 00001 00101
 
 	ld a, $80            ; Set index to first color + auto-increment
     ldh (<BCPS),a       
     ld b, 32             ; 32 color entries=0x40 bytes
-    
- ; Checks if $FF69 is accessible:
- _LoopBGPAL:    
-	push de
-	
-    ; Sets BG Palettes:
-    WAITBLANK
-    ldi a,(hl)	
-_loopA:
-	dec d
-	jr z, _doneA
-	and a, $DE
+
+_LoopBGPAL:
+	ldi a, (hl)
+	ld e, a
+	ldi a, (hl)
+	ld d, a
+	push bc
+ _loop:
+	dec c
+	jp z, _done
+	ld a, d
+	and a, $7B
 	srl a
-	jr _loopA
-_doneA:
+	ld d, a
+	ld a, e
+	rr a
+	and a, $EF
+	ld e, a
+	jr _loop
+_done:
+	WAITBLANK
+
+	ld a, e
+    ldh (<BCPD),a
+	ld a, d
     ldh (<BCPD),a
 
-    WAITBLANK
-	ldi a, (hl)
-_loopB:
-	dec e
-	jr z, _doneB
-	and a, $7B	
-	srl a
-	jr _loopB
-_doneB:
-    ldh (<BCPD),a
+	pop bc
 
     dec b
-	pop de
     jr nz,_LoopBGPAL
 
 	pop hl
 	pop de
 	pop bc
 	pop af
+	
+	call $1F8D
 	ret
 .ENDS
 
