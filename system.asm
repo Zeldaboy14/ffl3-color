@@ -4,7 +4,7 @@
 .DEFINE WRAM_PALETTE_SIZE		0x40
 .DEFINE WRAM_PALETTE_FADECOUNT	0x4
 .DEFINE WRAM_BGPALETTE_ADDR 	WRAM1
-.DEFINE WRAM_OBJPALETTE_ADDR 	WRAM1 + WRAM_PALETTE_SIZE * WRAM_PALETTE_FADECOUNT
+.DEFINE WRAM_OBJPALETTE_ADDR 	WRAM1 + WRAM_PALETTE_SIZE
 
 .BANK $10 SLOT 1
 .SECTION "System_Code" FREE	
@@ -34,7 +34,7 @@ _InitOBJPaletteLoop:
 	
     call InitializeBGPalettes
     call InitializeOBJPalettes
-	call InitializeBGFadeLookup
+	call InitializeFadeLookup
 	ret
 
 InitializeBGPalettes:
@@ -89,20 +89,21 @@ _OBJLoop:
 	ei
     ret
 
-;Initialize BG fade lookup tables
-InitializeBGFadeLookup:
+;Initialize fade lookup tables
+InitializeFadeLookup:
 	di
 	PUSH_ALL
 		
-	ld hl, WRAM_BGPALETTE_ADDR
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
-	ld b, 32
-	ld c, 1	
-	call LoadFadeLevel
-	ld hl, WRAM_BGPALETTE_ADDR + (WRAM_PALETTE_SIZE * 2)
-	call LoadFadeBlack
 
+	ld hl, WRAM_PALETTE_ADDR
+	ld c, 1	
+	ld b, WRAM_PALETTE_SIZE * 2
+	call LoadFadeLevel
+	ld hl, WRAM_BGPALETTE_ADDR + (WRAM_PALETTE_SIZE * 8)
+	ld b, WRAM_PALETTE_SIZE * 2
+	call LoadFadeBlack
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
 
@@ -113,6 +114,7 @@ InitializeBGFadeLookup:
 LoadFadeLevel:
 	PUSH_ALL
 	inc c
+	srl b
 
 _colorLoop:
 	ldi a, (hl)
@@ -136,15 +138,13 @@ _fadeLoopDone:
 	pop bc
 	push hl
 
-	;HL = (HL -+ (c - 1) * 0x40) - 2
+	;HL = HL - 2 + (0x100 * (c - 1))
 	ld a, c
 	dec a
-	swap a
-	sla a
-	sla a
-	add a, l
-	sub a, 2
-	ld l, a
+	add a, h
+	ld h, a
+	dec l
+	dec l
 	
 	ld a, e
     ldi (hl), a
@@ -161,11 +161,11 @@ _fadeLoopDone:
 
 ;Load black palette into cache.  Requires wram bank already set
 ;@param HL	Target address
+;@param B	Count
 LoadFadeBlack:
 	push af
 	push bc
 
-	ld b, WRAM_PALETTE_SIZE
 	ld a, 0
 @loop:
 	ldi (hl), a	

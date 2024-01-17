@@ -28,16 +28,11 @@ _notzero:
 	
 	;Load data from fade cache
     ld hl, WRAM_BGPALETTE_ADDR
-	;HL = HL + (c * 0x40)
+	;HL = HL - (0x100 * c)
 	ld a, c
-	swap a
-	sla a
-	sla a
-	add a, l
-	ld l, a
+	add a, h
+	ld h, a
 	
-	inc c
-
 	ld a, $80            ; Set index to first color + auto-increment
     ldh (<BCPS),a       
     ld b, 64             ; 32 color entries=0x40 bytes
@@ -48,6 +43,17 @@ _LoopBGPAL:
     ldh (<BCPD),a
     dec b
     jr nz,_LoopBGPAL
+
+	ld a, $80            ; Set index to first color + auto-increment
+    ldh (<OCPS),a       
+    ld b, 64             ; 32 color entries=0x40 bytes
+
+_LoopOBJPAL:
+	WAITBLANK
+	ldi a, (hl)
+    ldh (<OCPD),a
+    dec b
+    jr nz,_LoopOBJPAL
 	
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
