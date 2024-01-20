@@ -9,6 +9,8 @@
 ;0c99 = load metatile to c880 when moving down
 ;0be0~0c19 is identical to 0c9a~0cd2
 
+;tilemap itself is loaded at d000 block
+
 .BANK 0 SLOT 0
 .ORG $0A78
 .SECTION "LoadMetatileToBufferRight_Hook" OVERWRITE
@@ -191,6 +193,54 @@ UpdateMapVRAM:
 	ldi a, (hl)
 	ld (de), a
 	ld a, e
+	ret
+.ENDS
+
+; Enter clouds
+; 3F6B ld (de) into (hl++) [de = C990, hl = 9F94] (oh hey this is my code isn't it)
+; 3F75 ld (de) into (hl), inc de [de = C890, hl = 9F94] (me too)
+; 5E09 ld (de) into (hl), ld a from ($c800) [de = 9F94, hl = 9B94]
+; 3F6B ld (de) into (hl++) [de = C990, hl = 9F94] (oh hey this is my code isn't it)
+; 3F75 ld (de) into (hl), inc de [de = C890, hl = 9F94] (me too)
+; 5E09 ld (de) into (hl), ld a from ($c800) [de = 9F94, hl = 9B94]
+; Exit clouds
+; 3F6B ld (de) into (hl++) [de = C992, hl = 9F94] (oh hey this is my code isn't it)
+; 3F75 ld (de) into (hl), inc de [de = C892, hl = 9F94] (me too)
+; 5E09 ld (de) into (hl), ld a from ($c800) [de = 9F94, hl = 9B94]
+; 3F6B ld (de) into (hl++) [de = C992, hl = 9F94] (oh hey this is my code isn't it)
+; 3F75 ld (de) into (hl), inc de [de = C892, hl = 9F94] (me too)
+; 5E09 ld (de) into (hl), ld a from ($c800) [de = 9F94, hl = 9B94]
+
+.BANK $01 SLOT 1
+.ORGA $5E09
+.SECTION "SwapBGAndWindowVRAM_Hook" OVERWRITE
+	call SwapBGAndWindowVRAM
+	nop
+	nop
+.ENDS
+
+.BANK $00 SLOT 0
+.SECTION "SwapBGAndWindowVRAM_Code" FREE
+SwapBGAndWindowVRAM:
+	push hl
+	push af
+
+	ld a, 1
+	ldh (<VBK), a
+
+	ld a, (de)
+	ld (hl), a
+
+	ld a, 0
+	ldh (<VBK), a
+	
+	pop af
+	pop hl
+	
+	;Currently this just replicates the five bytes that the call above overwrote
+	ld a, (de)
+	ld (hl), a
+	ld a, ($C800)
 	ret
 .ENDS
 
