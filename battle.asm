@@ -5,16 +5,17 @@
 ;D000 enemy tiles
 ;0B:42D5 loads sequential tiles for enemies into d000 block
 
+;Stack when loading enemies:
+;$0B:$400D
+;$0B:$4093
+
+
+
 .BANK $00 SLOT 0
 .ORGA $2120
 .SECTION "EnemyLoadToVRAM_Hook" OVERWRITE
 	;Enemies are always a multiple of 5 tiles wide?
-	call EnemyLoadToVRAM
-	call EnemyLoadToVRAM
-	call EnemyLoadToVRAM
-	call EnemyLoadToVRAM
-	call EnemyLoadToVRAM
-	ldh a, ($41)
+	call EnemyLoad5ToVRAM
 .ENDS
 
 .BANK $0B SLOT 1
@@ -46,7 +47,14 @@ EnemyLoadToRam:
 
 .BANK $00 SLOT 0
 .SECTION "BattleBase_Code" FREE
-EnemyLoadToVRAM:
+EnemyLoad5ToVRAM:
+;NOTE: This code must be FAST to eliminate a race condition on the last boss.
+;The Xagor effect removes the vblank hook and before it puts a new one in, vblank has happened.
+;This hook currently has to check to see if its writing enemy tiles - we should probably figure
+;out how to hook someplace that we can be certain already is doing enemy tiles.  But as it is now,
+;checking the range ONCE for five writes is avoiding the crash.
+;NOTE: This may also have been the crash on the Analogue Pocket.
+
 	ld a, h
 	cp $D0
 	jr lst, _no
@@ -58,21 +66,36 @@ EnemyLoadToVRAM:
 	ldh (<SVBK), a
 	ld a, 1
 	ldh (<VBK), a
+	push hl
+	push de
 
-	WAITBLANK
-	ld a, (hl)
+	ldi a, (hl)
 	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+
+	pop de
+	pop hl
 
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
 	ld a, 0
 	ldh (<VBK), a
-
 _no:
 	;Currently this just replicates the three bytes that the call above overwrote
-	WAITBLANK
 	ldi a, (hl)
 	ld (de), a
 	inc de
+
 	ret
 .ENDS
