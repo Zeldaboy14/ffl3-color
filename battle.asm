@@ -26,7 +26,7 @@
 .SECTION "Battle_Code" FREE	
 EnemyLoadToRam:
 	push af
-	ld a, WRAM_WORKEXT_BANK
+	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
 
 	;For now, always palette 6.
@@ -54,7 +54,7 @@ EnemyLoadToVRAM:
 	cp $98
 	jr lst, _no
 
-	ld a, WRAM_WORKEXT_BANK
+	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
 	ld a, 1
 	ldh (<VBK), a

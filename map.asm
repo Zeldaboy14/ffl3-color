@@ -1,5 +1,10 @@
+;Both buffers can occupy the same high byte block, because the MT buffer starts at $80
+.DEFINE METATILE_BUFFER_H $DF
+.DEFINE METATILE_STAGE_H $DF
 
 ;Game draws 24 tiles into the vram bg map for columns or rows, rather than all 32
+;tilemap itself is loaded at d000 block
+;All game metatiles are in ROM06, and our palette attribution information is in ROM16
 
 ;Writes Metatile data into first output buffer
 ;0a78 = load metatile to c880 when moving right
@@ -8,8 +13,6 @@
 ;0be0 = load metatile to c880 when moving up
 ;0c99 = load metatile to c880 when moving down
 ;0be0~0c19 is identical to 0c9a~0cd2
-
-;tilemap itself is loaded at d000 block
 
 .BANK 0 SLOT 0
 .ORG $0A78
@@ -29,16 +32,21 @@
 	call LoadMetatileRowToBuffer
 .ENDS
 
-.SECTION "LoadMetatileColumnToBuffer_Code" FREE
- LoadMetatileRowToBuffer:
+.SECTION "LoadMetatileToBuffer_Code" FREE
+;Overrides original code that reads a metatile from de (<- ROM6) and into hl (-> $C880).
+;Stores palette attribute data to block beginning at WRAM_METATILE_BANK::D880.
+LoadMetatileRowToBuffer:
 	push hl
 	push de
 	push bc
 	push af
-	inc h ;C9 block instead of C8
+	
+	ld h, METATILE_BUFFER_H
 	
 	ld a, $16
 	ld (CHANGE_BANK), a
+	ld a, WRAM_METATILE_BANK
+	ldh (<SVBK), a
 	
 	ld a, (de)
 	ldi (hl), a
@@ -56,6 +64,8 @@
 	ld a, (de)
 	ld (hl), a
 
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
 	ld a, $06
 	ld (CHANGE_BANK), a
 
@@ -69,18 +79,21 @@
 	ldi (hl), a
 	inc de
 	ret
-.ENDS
 
-.SECTION "LoadMetatileRowToBuffer_Code" FREE
- LoadMetatileColumnToBuffer:
+;Overrides original code that reads a metatile from de (<- ROM6) and into hl (-> $C880).
+;Stores palette attribute data to block beginning at WRAM_METATILE_BANK::D880.
+LoadMetatileColumnToBuffer:
 	push hl
 	push de
 	push bc
 	push af
-	inc h ;C9 block instead of C8
 	
+	ld h, METATILE_BUFFER_H
+
 	ld a, $16
 	ld (CHANGE_BANK), a
+	ld a, WRAM_METATILE_BANK
+	ldh (<SVBK), a
 
 	ld a, (de)
 	ldi (hl), a
@@ -96,6 +109,8 @@
 	ld a, (de)
 	ld (hl), a
 
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
 	ld a, $06
 	ld (CHANGE_BANK), a
 
@@ -111,7 +126,7 @@
 	ret
 .ENDS
 
-;Write tile data into second output buffer
+;Write single tile data into second output buffer
 ;396D = load tile row IDs into C103~C11A from C880~C897
 ;399C = load tile col IDs into C103~C11A from C880~C897
 
@@ -127,21 +142,24 @@
 
 .BANK $00 SLOT 0
 .SECTION "LoadBufferToStage_Code" FREE
- LoadBufferToStage:
+LoadBufferToStage:
 	push hl
 	push af
-	inc d ;C9 block instead of C8
+	push de
+	ld d, METATILE_BUFFER_H
+	ld h, METATILE_STAGE_H
 	
-	;Add $80 for attributes
-	ld a, l
-	add a, $80
-	ld l, a
+	ld a, WRAM_METATILE_BANK
+	ldh (<SVBK), a
 	
 _loop:
 	ld a, (de)
 	ldi (hl), a
 
-	dec d
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+
+	pop de
 	pop af
 	pop hl
 	
@@ -171,18 +189,20 @@ _loop:
 UpdateMapVRAM:
 	push hl
 	push af
+
+	ld h, METATILE_STAGE_H
+
 	ld a, 1
 	ldh (<VBK), a
-
-	;Add $80 for attributes
-	ld a, l
-	add a, $80
-	ld l, a
+	ld a, WRAM_METATILE_BANK
+	ldh (<SVBK), a
 
 	ldi a, (hl)
 	ld (de), a
 	ld a, e
 
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
 	ld a, 0
 	ldh (<VBK), a
 	
@@ -262,19 +282,25 @@ SwapBGAndWindowVRAM:
  LoadBufferToVRAM:
 	push hl
 	push af
-	inc d ;C9 block instead of C8
+	push de
+	
+	ld d, METATILE_BUFFER_H
 		
 	ld a, 1
 	ldh (<VBK), a
+	ld a, WRAM_METATILE_BANK
+	ldh (<SVBK), a
 
 _loop:
 	ld a, (de)
 	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
 
-	dec d
+	pop de
 	pop af
 	pop hl
 	
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
 	ld a, 0
 	ldh (<VBK), a
 	

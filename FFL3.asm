@@ -61,6 +61,7 @@ DxInit:
 	ld a, 0x10
 	ld (CHANGE_BANK), a
 
+	call InitializeWRAM
 	call InitializePalettes
 
 	ld a, 0x1

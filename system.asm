@@ -1,6 +1,7 @@
 .DEFINE WRAM_DEFAULT_BANK		0x01
-.DEFINE WRAM_WORKEXT_BANK		0x02
+.DEFINE WRAM_METATILE_BANK		0x02
 .DEFINE WRAM_PALETTE_BANK 		0x03
+.DEFINE WRAM_BATTLE_BANK		0x04
 .DEFINE WRAM_PALETTE_ADDR 		WRAM1
 .DEFINE WRAM_PALETTE_SIZE		0x40
 .DEFINE WRAM_PALETTE_FADECOUNT	0x4
@@ -9,6 +10,24 @@
 
 .BANK $10 SLOT 1
 .SECTION "System_Code" FREE	
+InitializeWRAM:
+	ld b, 2
+_InitializeWRAMBankLoop:
+	ld a, b
+	ldh (<SVBK), a
+	ld hl, $D000
+_InitializeWRAMByteLoop:
+	ld a, $00
+	ldi (hl), a
+	ld a, h
+	cp $E0
+	jp lst, _InitializeWRAMByteLoop
+	inc b
+	ld a, b
+	cp $8
+	jp lst, _InitializeWRAMBankLoop
+end
+
 InitializePalettes:
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
