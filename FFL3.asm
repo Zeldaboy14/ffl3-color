@@ -13,6 +13,7 @@
 .ROMBANKS 32                    ; 32 banks
 .ROMSIZE 4
 .ROMGBCONLY                     ; Writes $C0 ("GBC only") into $0143 (CGB flag)
+.CARTRIDGETYPE $1B				; MBC5 + RAM + Battery
 .COMPUTEGBCOMPLEMENTCHECK       ; Computes the ROM complement check ($014D)
 .COMPUTEGBCHECKSUM              ; Computes the ROM checksum ($014E-$014F)
 
@@ -34,7 +35,6 @@
 .include "definitions.asm"		; Definitions
 .include "macros.asm"			; Macros 
 .include "palettes.asm"
-.include "system.asm"
 
 .include "metatileattr.asm"
 .include "map.asm"
@@ -42,6 +42,7 @@
 .include "font.asm"
 .include "fade.asm"
 .include "battle.asm"
+.include "system.asm"
 
 .BANK 0 SLOT 0
 .ORG $0201
@@ -63,6 +64,7 @@ DxInit:
 
 	call InitializeWRAM
 	call InitializePalettes
+    call CopyFarCodeToRAM
 
 	ld a, 0x1
 	ld (CHANGE_BANK), a

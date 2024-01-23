@@ -1,13 +1,3 @@
-.DEFINE WRAM_DEFAULT_BANK		0x01
-.DEFINE WRAM_METATILE_BANK		0x02
-.DEFINE WRAM_PALETTE_BANK 		0x03
-.DEFINE WRAM_BATTLE_BANK		0x04
-.DEFINE WRAM_PALETTE_ADDR 		WRAM1
-.DEFINE WRAM_PALETTE_SIZE		0x40
-.DEFINE WRAM_PALETTE_FADECOUNT	0x4
-.DEFINE WRAM_BGPALETTE_ADDR 	WRAM1
-.DEFINE WRAM_OBJPALETTE_ADDR 	WRAM1 + WRAM_PALETTE_SIZE
-
 .BANK $10 SLOT 1
 .SECTION "System_Code" FREE	
 InitializeWRAM:
@@ -108,6 +98,31 @@ _OBJLoop:
 	POP_ALL
 	ei
     ret
+
+;Move various functions stored in extended ROM banks to WRAM banks so they can be called
+;without changing the ROM bank during original game code.
+CopyFarCodeToRAM:
+	ld a, WRAM_PALETTE_BANK
+	ldh (<SVBK), a
+
+	ld hl, FADECODE_FAR_START
+	ld bc, FADECODE_FAR_END - FADECODE_FAR_START
+	ld de, WRAM_FADE_CODE
+_loop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+
+	jp nz, _loop
+
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+
+	ret;
 
 ;Initialize fade lookup tables
 InitializeFadeLookup:

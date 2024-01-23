@@ -1,3 +1,4 @@
+.DEFINE WRAM_Fadeout WRAM_FADE_CODE + FadeOut_Far - FADECODE_FAR_START
 
 .BANK 0 SLOT 0
 .ORGA $39Ea
@@ -7,13 +8,33 @@
 
 .SECTION "FadeOut_Code" FREE	
 FadeOut:
+	di
+	push af
+
+	ld a, WRAM_PALETTE_BANK
+	ldh (<SVBK), a
+	call WRAM_Fadeout
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+
+	pop af
+	ei
+
+	;Call the code replaced by the hook above
+	call $1F8D
+
+	ret
+.ENDS
+
+.BANK $10 SLOT 1
+.SECTION "FadeOut_Far" FREE
+FADECODE_FAR_START:
+FadeOut_Far:
 	push af
 	push bc
 	push de
 	push hl
 	
-	di
-
 	ld a, l
 	sub a, $b4
 	jr nc, _notzero
@@ -22,10 +43,7 @@ _notzero:
 	srl a
 	srl a
 	ld c, a
-		
-	ld a, WRAM_PALETTE_BANK
-	ldh (<SVBK), a
-	
+			
 	;Load data from fade cache
     ld hl, WRAM_BGPALETTE_ADDR
 	;HL = HL - (0x100 * c)
@@ -55,18 +73,12 @@ _LoopOBJPAL:
     dec b
     jr nz,_LoopOBJPAL
 	
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-
-	ei
-
 	pop hl
 	pop de
 	pop bc
 	pop af
-	
-	call $1F8D
 	ret
+FADECODE_FAR_END:
 .ENDS
 
 ; 0RRRRRGG GGGBBBBB
