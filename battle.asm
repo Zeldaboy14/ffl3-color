@@ -190,8 +190,8 @@
 
 .BANK $0B SLOT 1
 .ORGA $406B
-.SECTION "StashEnemyID_Hook" OVERWRITE
-	call StashEnemyIDs
+.SECTION "StartBattle_Hook" OVERWRITE
+	call StartBattle
 .ENDS
 
 .ORGA $42D5
@@ -200,11 +200,25 @@
 .ENDS
 
 .SECTION "Battle_Code" FREE	
-StashEnemyIDs:
+StartBattle:
 	di
 	push hl
 	push bc
 	push af
+
+	ld a, WRAM_PALETTE_BANK
+	ldh (<SVBK), a
+
+    ld hl,WRAM_BATTLEPALETTE_ADDR
+    ld a, $80           ; Set index to first color + auto-increment
+    ldh (<BCPS), a  ; 
+    ld b, 64                ; 64=0x40 bytes
+_PaletteLoop:
+    WAITBLANK
+    ldi a,(hl)
+    ldh (<BCPD),a
+    dec b
+    jr nz,_PaletteLoop
 
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a

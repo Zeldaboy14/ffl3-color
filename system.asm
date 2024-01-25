@@ -41,6 +41,16 @@ _InitOBJPaletteLoop:
 	inc de
 	dec c
 	jp nz, _InitOBJPaletteLoop
+
+	ld hl, InitialBattlePal
+	ld c, WRAM_PALETTE_SIZE
+	ld de, WRAM_BATTLEPALETTE_ADDR
+_InitBattlePaletteLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec c
+	jp nz, _InitBattlePaletteLoop
 	
     call InitializeBGPalettes
     call InitializeOBJPalettes
@@ -134,10 +144,10 @@ InitializeFadeLookup:
 
 	ld hl, WRAM_PALETTE_ADDR
 	ld c, 1	
-	ld b, WRAM_PALETTE_SIZE * 2
+	ld b, WRAM_PALETTE_SIZE * 3
 	call LoadFadeLevel
 	ld hl, WRAM_BGPALETTE_ADDR + (WRAM_PALETTE_SIZE * 8)
-	ld b, WRAM_PALETTE_SIZE * 2
+	ld b, WRAM_PALETTE_SIZE * 3
 	call LoadFadeBlack
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a

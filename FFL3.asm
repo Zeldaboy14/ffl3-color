@@ -17,7 +17,7 @@
 .COMPUTEGBCOMPLEMENTCHECK       ; Computes the ROM complement check ($014D)
 .COMPUTEGBCHECKSUM              ; Computes the ROM checksum ($014E-$014F)
 
-.BACKGROUND "Final Fantasy Legend III (USA).gb"        ; This loads the ROM so we can write directly into it
+.BACKGROUND "Final Fantasy Legend III (USA).gb"
 .UNBACKGROUND $3E70 $3FFF       ; Free space in bank $00
 .UNBACKGROUND $FF14 $FFFF       ; Free space in bank $03
 .UNBACKGROUND $1BFD2 $1BFFF     ; Free space in bank $06
@@ -86,12 +86,12 @@ DxInit:
 ;10000 Sprites
 ;14000 Tiles
 ;18000 Metatile data (and map data?)
-;1C000 Metatile and map data?
-;20000 Metatile and map data?
+;1C000 Unknown
+;20000 Unknown
 ;24000 Unknown
 ;28000 Unknown
-;2C000 Unknown
+;2C000 Battle code
 ;30000 Unknown
 ;34000 Unknown
 ;38000 Unknown
-;3C000 Unknown
+;3C000 Textbox code
