@@ -1,3 +1,11 @@
+.DEFINE ENEMIES_TO_LOAD $CC6B
+.DEFINE ENEMYA_COUNT $CC36
+.DEFINE ENEMYB_COUNT $CC37
+.DEFINE ENEMYC_COUNT $CC38
+.DEFINE ENEMYA_ID $CC59
+.DEFINE ENEMYB_ID $CC5A
+.DEFINE ENEMYC_ID $CC5B
+
 
 ;2120 load enemy tiles
 ;01:6066 erase background for battle
@@ -12,13 +20,13 @@
 ; ld bc, $0400
 ; call $218F	;Does not seem to be important to battle program...
 ; call $1D9E	;Set up window?
-; call $5A18	;Loads enemy party data from $cc59~5B, with each byte being an enemy ID and FF being done
+; call $5A18	;Loads enemy party data from $cc59~5B, with each byte being an enemy ID and FF being done. Sets number of enemies.
 ; call $40BF
 ; ld hl, $D800
 ; ld de, $9000
 ; ld bc, $07C0
 ; call $20FF
-;After that point, all art data is copied.
+;After that point, all bg tiles are copied.
 
 ;40D5 loads enemy 1
 ;40E2 loads enemy 2
@@ -26,6 +34,7 @@
 ;All call $417D
 ;$4301 is the map of enemy IDs to art indices
 
+;CC36~38 enemy counts
 ;CC59~5B enemy IDs
 ;00 FUNGUS		01 MUSHROOM
 ;02 STARFISH	03 PENTAGON
@@ -57,7 +66,39 @@
 ;4B SPRITE		4C NYMPH		4D FAIRY		4E PIXIE		4F SYLPH
 ;50 MEDUSA		51 LAMIA		52 NAGA			53 SCYLLA		54 ECHIDNA
 ;55 FISH MAN 	56 MERMAN		57 NIX			58 SELKIE		59 GILL MAN
-;5A WATCHER
+;5A WATCHER		5B HERMIT		5C MAGE			5D SORCERER		5E WARLOCK
+;5F THANOS		60 SOARX		61 SIREN		62 SUCCUBUS		63 SPHINX
+;64 FIGHTER		65 WARRIOR		66 LIZ MAN 		67 LIZ DUKE		68 LIZ KING
+;69 SEAMONK		6A SALTMONK		6B BROODER		6C BIG HEAD 	6D DAGON
+;6E THOTH		6F HORUS		72 OSIRIS		73 SET 			76 ANUBIS
+;70 FAMILIAR	71 FIEND		74 LOKI			75 MEPHISTO		77 AESHMA
+;78 HOOLIGAN	79 THIEF		7A BURGLER		7B BRIGAND		7C OUTLAW
+;7D QUACKY		7E STRANGER		7F IMPOSTER		80 LOONYGUY		81 CRACKER
+;82 SOLDIER		83 TERORIST		84 COMMANDO		85 HIREDGUN		86 SS
+;87 RONIN		88 SAMURAI		89 HATAMOTO		8A DAIMYO		8B SHOGUN
+;8C TALKER		8D BUSYBODY		8E RUMORER		8F TATTLER		90 VIRAGO
+;91 HEADLESS	92 DUKE			93 DULLAHAN		94 BRAIN 		95 REMOVED
+;96 ORB RAT 	97 TOMTOM		98 JERRIT		99 MAITIE		9A SPECTRAT
+;9B FLOWER		9C COSMOS		9D IRONROSE		9E REAPER		9F CACTUS
+;A0 GUARD		A1 KEEPER		A2 MONITOR		A3 SEARCHER		A4 ALERT
+;A5 BAZOOKA		A6 75MM			A7 105MM		A8 150MM		A9 210MM
+;AA TRIXSTER	AB CON MAN 		AC BEGUILER		AD SWINDLER		AE HUSTLER
+;AF AIRMAID		B0 IRONLADY		B1 VALKYRIE		B2 IKEN			B3 VENUS
+;B4 WATERHAG
+;B5 DWELG
+;B6 LARA
+;B7 JORGANDR
+;B8 ASHURA
+;B9 DOGRA
+;BA CHAOS
+;BB MAITREYA
+;BC FENRIR
+;BD GUHA
+;BE DAHAK
+;BF AGRON
+;C0 BALLOR
+;C1 SOL
+;C2 XAGOR
 
 ;406E seems to cue up a copy of 7c0 bytes from d800 to 9000
 ;Enemy art tiles appears to be loaded to $9000 from $d800, which is loaded from $d480 by code at 0B:412B 16 bytes at a time.
@@ -142,11 +183,15 @@
 ;$CC51~$CC59 or so contain the dimensions of each enemy in the battle, which is written to by $5BD5
 ;0B:4232 loads dimensions from HL (CC56 at the time), and if it's $77 jumps to $4240, if it's $F7 jumps to $4277, otherwise $42B6
 ;0B:42B6 appears to take A as tile dimensions, with the high and low bit being height and width minus 1.
+;Looks like enemy tiles are loaded right to left, bottom to top?  Call is $B:$421C
+;Destination locations start at $CC41, with x and y bytes for each enemy.  These are written by 0B:5BB8
+;CC6B is the number of enemies left to draw
+;CC6F is source tile number for the draw, and it changes by the time each is drawn
 
 .BANK $0B SLOT 1
-.ORGA $4182
+.ORGA $406B
 .SECTION "StashEnemyID_Hook" OVERWRITE
-	call StashEnemyID
+	call StashEnemyIDs
 .ENDS
 
 .ORGA $42D5
@@ -155,38 +200,92 @@
 .ENDS
 
 .SECTION "Battle_Code" FREE	
-StashEnemyID:
+StashEnemyIDs:
+	di
+	push hl
+	push bc
 	push af
 
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
 
-	pop af
-	ld ($DFFF), a
-	push af
+	ld hl, $DFF0
+
+_enemyA:
+	ld a, (ENEMYA_COUNT)
+	cp $00
+	jr equ, _enemyB
+	ld c, a
+_loopEnemyA:
+	ld a, (ENEMYA_ID)
+	ldi (hl), a
+	dec c
+	jr nz, _loopEnemyA
+
+_enemyB:
+	ld a, (ENEMYB_COUNT)
+	cp $00
+	jr equ, _enemyC
+	ld c, a
+_loopEnemyB:
+	ld a, (ENEMYB_ID)
+	ldi (hl), a
+	dec c
+	jr nz, _loopEnemyB
+
+_enemyC:
+	ld a, (ENEMYC_COUNT)
+	cp $00
+	jr equ, _done
+	ld c, a
+_loopEnemyC:
+	ld a, (ENEMYC_ID)
+	ldi (hl), a
+	dec c
+	jr nz, _loopEnemyC
+
+_done:
 
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
 
 	pop af
+	pop bc
+	pop hl
+
+	;Skip a whole vblank because the above code was too slow to fit
+_wait:
+    ldh a, ($44)
+    cp a, 0
+    jr nz, _wait
+    ei
 
 	;Currently this just replicates the three bytes that the call above overwrote
-	ld hl, $4301
+	call $40BF
 	ret
 
 EnemyLoadToRam:
+	di
 	push af
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
 
-	;For now, always palette 6.
-	ld a, ($DFFF)
+	push de
+	ld d, $DF
+	ld a, (ENEMIES_TO_LOAD)
+	dec a
+	or a, $F0
+	ld e, a
+	ld a, (de)
 	and $3
+	pop de
+
 	ld (hl), a
 
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
 	pop af
+	ei
 
 	;Currently this just replicates the three bytes that the call above overwrote
 	ldi (hl), a
@@ -203,14 +302,14 @@ EnemyLoad5ToVRAM:
 ;This hook currently has to check to see if its writing enemy tiles - we should probably figure
 ;out how to hook someplace that we can be certain already is doing enemy tiles.  But as it is now,
 ;checking the range ONCE for five writes is avoiding the crash.
-;NOTE: This may also have been the crash on the Analogue Pocket.
-
 	ld a, h
 	cp $D0
 	jr lst, _no
 	ld a, d
 	cp $98
 	jr lst, _no
+
+	di
 
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
@@ -241,7 +340,10 @@ EnemyLoad5ToVRAM:
 	ldh (<SVBK), a
 	ld a, 0
 	ldh (<VBK), a
+
+	ei
 _no:
+
 	;Currently this just replicates the three bytes that the call above overwrote
 	ldi a, (hl)
 	ld (de), a
