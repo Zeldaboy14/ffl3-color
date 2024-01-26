@@ -286,19 +286,7 @@ EnemyLoadToRam:
 	push af
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
-
-	push de
-	ld d, $DF
-	ld a, (ENEMIES_TO_LOAD)
-	dec a
-	or a, $F0
-	ld e, a
-	ld a, (de)
-	and $3
-	pop de
-
-	ld (hl), a
-
+	call WRAM_BATTLE_CODE + EnemyLoadToRam_Far - BATTLECODE_FAR_START
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
 	pop af
@@ -308,7 +296,40 @@ EnemyLoadToRam:
 	ldi (hl), a
 	inc a
 	dec c
+
 	ret
+.ENDS
+
+.BANK $10 SLOT 1
+.SECTION "Battle_Code_Far" FREE	
+BATTLECODE_FAR_START:
+EnemyLoadToRam_Far:
+	push de
+
+	;de = $DFF0 + (ENEMIES_TO_LOAD)
+	ld d, $DF
+	ld a, (ENEMIES_TO_LOAD)
+	dec a
+	or a, $F0
+	ld e, a
+
+	;get enemy id into a
+	ld a, (de)
+
+	;get enemy attribute into a
+	push hl
+	ld hl, WRAM_BATTLE_ENEMYTILEATTR_ADDR
+	ld l, a
+	ld a, (hl)
+	pop hl
+
+	pop de
+
+	;load attribute into (hl)
+	ld (hl), a
+
+	ret
+BATTLECODE_FAR_END:
 .ENDS
 
 .BANK $00 SLOT 0

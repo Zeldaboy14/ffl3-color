@@ -112,13 +112,13 @@ _OBJLoop:
 ;Move various functions stored in extended ROM banks to WRAM banks so they can be called
 ;without changing the ROM bank during original game code.
 CopyFarCodeToRAM:
+_fadeCode:
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
-
 	ld hl, FADECODE_FAR_START
 	ld bc, FADECODE_FAR_END - FADECODE_FAR_START
 	ld de, WRAM_FADE_CODE
-_loop:
+_fadeCodeLoop:
 	ldi a, (hl)
 	ld (de), a
 	inc de
@@ -126,8 +126,39 @@ _loop:
 	;dec bc does not set the z flag for some dumb reason, so oring b and c here
 	ld a, b
 	or c
+	jp nz, _fadeCodeLoop
 
-	jp nz, _loop
+_battleCode:
+	ld a, WRAM_BATTLE_BANK
+	ldh (<SVBK), a
+	ld hl, BATTLECODE_FAR_START
+	ld bc, BATTLECODE_FAR_END - BATTLECODE_FAR_START
+	ld de, WRAM_BATTLE_CODE
+_battleCodeLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _battleCodeLoop
+
+_enemyTileAttributes:
+	ld a, WRAM_BATTLE_BANK
+	ldh (<SVBK), a
+	ld hl, EnemyTileAttributes_Start
+	ld bc, EnemyTileAttributes_End - EnemyTileAttributes_Start
+	ld de, WRAM_BATTLE_ENEMYTILEATTR_ADDR
+_enemyTileAttributesLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _enemyTileAttributesLoop
 
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a

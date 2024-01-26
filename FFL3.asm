@@ -41,6 +41,7 @@
 .include "textbox.asm"
 .include "font.asm"
 .include "fade.asm"
+.include "enemies.asm"
 .include "battle.asm"
 .include "system.asm"
 
