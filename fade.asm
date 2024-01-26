@@ -43,10 +43,21 @@ _notzero:
 	srl a
 	srl a
 	ld c, a
-			
-	;Load data from fade cache
+
+	cp 2
+	jr neq, _dontresetpalette
+	ld a, 0
+	ld ($DFFF), a
+_dontresetpalette:
+
     ld hl, WRAM_BGPALETTE_ADDR
-	;HL = HL - (0x100 * c)
+	ld a, ($DFFF)
+	or a
+	jr z, _LoadBGPal
+	ld hl, WRAM_BATTLEPALETTE_ADDR
+
+_LoadBGPal:
+	;HL = HL + (0x100 * c)
 	ld a, c
 	add a, h
 	ld h, a
@@ -54,7 +65,6 @@ _notzero:
 	ld a, $80            ; Set index to first color + auto-increment
     ldh (<BCPS),a       
     ld b, 64             ; 32 color entries=0x40 bytes
-
 _LoopBGPAL:
 	WAITBLANK
 	ldi a, (hl)
@@ -62,10 +72,16 @@ _LoopBGPAL:
     dec b
     jr nz,_LoopBGPAL
 
+_LoadOBJPal:
+    ld hl, WRAM_OBJPALETTE_ADDR
+	;HL = HL + (0x100 * c)
+	ld a, c
+	add a, h
+	ld h, a
+
 	ld a, $80            ; Set index to first color + auto-increment
     ldh (<OCPS),a       
     ld b, 64             ; 32 color entries=0x40 bytes
-
 _LoopOBJPAL:
 	WAITBLANK
 	ldi a, (hl)

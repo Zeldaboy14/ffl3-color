@@ -209,6 +209,9 @@ StartBattle:
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
 
+	ld a, 1
+	ld ($DFFF), a
+
     ld hl,WRAM_BATTLEPALETTE_ADDR
     ld a, $80           ; Set index to first color + auto-increment
     ldh (<BCPS), a  ; 
