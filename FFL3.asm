@@ -19,6 +19,7 @@
 
 .BACKGROUND "Final Fantasy Legend III (USA).gb"
 .UNBACKGROUND $3E70 $3FFF       ; Free space in bank $00
+.UNBACKGROUND $7FF4 $7FFF       ; Free space in bank $01
 .UNBACKGROUND $FF14 $FFFF       ; Free space in bank $03
 .UNBACKGROUND $1BFD2 $1BFFF     ; Free space in bank $06
 .UNBACKGROUND $1FFF0 $1FFFF     ; Free space in bank $07
