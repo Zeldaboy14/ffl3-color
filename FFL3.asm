@@ -37,6 +37,7 @@
 .include "macros.asm"			; Macros 
 .include "palettes.asm"
 
+.include "sprites.asm"
 .include "metatileattr.asm"
 .include "map.asm"
 .include "textbox.asm"
