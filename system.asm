@@ -22,6 +22,10 @@ InitializePalettes:
 	ld a, WRAM_PALETTE_BANK
 	ldh (<SVBK), a
 
+	;Default to title screen palette
+	ld a, 3
+	ld ($DFFF), a
+
 	ld hl, InitialBGPal
 	ld c, WRAM_PALETTE_SIZE
 	ld de, WRAM_PALETTE_ADDR
@@ -51,6 +55,16 @@ _InitBattlePaletteLoop:
 	inc de
 	dec c
 	jp nz, _InitBattlePaletteLoop
+
+	ld hl, InitialTitlePal
+	ld c, WRAM_PALETTE_SIZE
+	ld de, WRAM_TITLEPALETTE_ADDR
+_InitTitlePaletteLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec c
+	jp nz, _InitTitlePaletteLoop
 	
     call InitializeBGPalettes
     call InitializeOBJPalettes
@@ -71,7 +85,7 @@ InitializeBGPalettes:
 _BGLoop:
     WAITBLANK    
     ; Sets BG Palettes:
-    ldi a,(hl)
+    ld a,$00
     ldh (<BCPD),a
     dec b
     jr nz,_BGLoop
@@ -175,10 +189,10 @@ InitializeFadeLookup:
 
 	ld hl, WRAM_PALETTE_ADDR
 	ld c, 1	
-	ld b, WRAM_PALETTE_SIZE * 3
+	ld b, $FF
 	call LoadFadeLevel
 	ld hl, WRAM_BGPALETTE_ADDR + (WRAM_PALETTE_SIZE * 8)
-	ld b, WRAM_PALETTE_SIZE * 3
+	ld b, $FF
 	call LoadFadeBlack
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a

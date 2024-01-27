@@ -48,13 +48,17 @@ _notzero:
 	jr neq, _dontresetpalette
 	ld a, 0
 	ld ($DFFF), a
+	ld a, 7
+	ldh ($F0), a
 _dontresetpalette:
 
     ld hl, WRAM_BGPALETTE_ADDR
 	ld a, ($DFFF)
-	or a
-	jr z, _LoadBGPal
-	ld hl, WRAM_BATTLEPALETTE_ADDR
+	swap a
+	sla a
+	sla a
+	add a, l
+	ld l, a
 
 _LoadBGPal:
 	;HL = HL + (0x100 * c)
