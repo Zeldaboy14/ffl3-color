@@ -1,5 +1,11 @@
 .DEFINE WRAM_Fadeout WRAM_FADE_CODE + FadeOut_Far - FADECODE_FAR_START
 
+.BANK $0F SLOT 1
+.ORGA $7EBC
+.SECTION "WarpFadeOut_Hook" OVERWRITE
+	call FadeOut
+.ENDS
+
 .BANK 0 SLOT 0
 .ORGA $39Ea
 .SECTION "FadeOut_Hook" OVERWRITE
@@ -8,7 +14,7 @@
 
 .SECTION "FadeOut_Code" FREE	
 FadeOut:
-	di
+;	di
 	push af
 
 	ld a, WRAM_PALETTE_BANK
@@ -18,7 +24,7 @@ FadeOut:
 	ldh (<SVBK), a
 
 	pop af
-	ei
+;	ei
 
 	;Call the code replaced by the hook above
 	call $1F8D
