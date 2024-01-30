@@ -18,7 +18,7 @@ InitialOBJPal:
     .db $FF,$7F,$FF,$7F,$53,$73,$00,$00
     .db $FF,$7F,$FF,$7F,$88,$7E,$00,$00
     .db $FF,$7F,$FF,$7F,$1C,$7E,$00,$00
-    .db $FF,$7F,$FF,$7F,$C0,$71,$00,$00
+    .db $FF,$7F,$FF,$7F,$14,$32,$00,$00
 InitialBattlePal:
     .db $D6,$5A,$FF,$7F,$5A,$6B,$00,$00
     .db $10,$00,$FF,$7F,$1F,$21,$00,$00

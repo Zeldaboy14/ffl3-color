@@ -84,9 +84,9 @@ DxInit:
 
 ;00000 Main code
 ;04000 Unknown
-;08000 Art
-;0c000 font, etc
-;10000 Sprites
+;08000 Spell sprites
+;0c000 font, NPC sprites, effect sprites
+;10000 Monster/Player Sprites
 ;14000 Tiles
 ;18000 Metatile data (and map data?)
 ;1C000 Unknown
