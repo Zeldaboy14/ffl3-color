@@ -142,6 +142,22 @@ _fadeCodeLoop:
 	or c
 	jp nz, _fadeCodeLoop
 
+_spriteCode:
+	ld a, WRAM_SPRITE_BANK
+	ldh (<SVBK), a
+	ld hl, SPRITECODE_FAR_START
+	ld bc, SPRITECODE_FAR_END - SPRITECODE_FAR_START
+	ld de, WRAM_SPRITE_CODE
+_spriteCodeLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _spriteCodeLoop
+
 _battleCode:
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a

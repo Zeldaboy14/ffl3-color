@@ -227,16 +227,12 @@ _yes:
 	di
 	ld a, WRAM_SPRITE_BANK
 	ldh (<SVBK), a
-	ld a, $11
-	ld ($2100), a
 
-	call SpriteRecordAddr_FarCode
+	call WRAM_SPRITE_CODE + (SpriteRecordAddr_FarCode - SPRITECODE_FAR_START)
 	
 	;Switch banks back
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
-	ld a, ($C0B1)
-	ld ($2100), a
 	ei
 _no:
 	pop af
@@ -264,7 +260,7 @@ SpriteSetPalette:
 	ld a, $11
 	ld ($2100), a
 
-	call SpriteFarCode
+	call WRAM_SPRITE_CODE + (SpriteFarCode - SPRITECODE_FAR_START)
 	
 	;Switch banks back
 	ld a, WRAM_DEFAULT_BANK
@@ -289,8 +285,9 @@ SpriteSetPalette:
 	ret
 .ENDS
 
-.BANK $11 SLOT 1
+.BANK $10 SLOT 1
 .SECTION "Sprite_FarCode" FREE
+SPRITECODE_FAR_START:
 ;Original code loads tiles into VRAM, additionally we record where they came from to 05:D000 block
 ;BC is byte count
 ;DE is destination, must be $8000~$87FF
@@ -386,4 +383,5 @@ SpriteFarCode:
 	pop hl
 
 	ret
+SPRITECODE_FAR_END:
 .ENDS
