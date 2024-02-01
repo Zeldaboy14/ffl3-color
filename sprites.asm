@@ -205,8 +205,10 @@ SpriteBank4Metadata:
 ;6C00 XYAT XYAT XYAT ???? ???? XYAT XYAT XYAT
 ;6C10 XYAT
 
+;RST $18 loads sprites, and it modifies the return stack to skip the byte after the RST $18 call, which it uses as the bank (!?)
 ;047C seems to be responsible for loading NPC sprite tiles to VRAM, using rst $18
 ;04BF seems to be responsible for loading visible player sprite tiles to VRAM, using rst $18
+
 ;07:7F09 seems to be the start of a bunch of other sprite loads... maybe a default set, since it looks hard-coded
 
 ;TODO: Make this write two bytes per tile: BANK, (HL-$4000)/$40
@@ -298,6 +300,24 @@ SpriteRecordAddr_FarCode:
 	push bc
 	push af
 
+	;Bank is determined by one of two things - either the high nibble of the byte after the RST $18 call, or ($C0B1) if that was zero.
+	push hl
+	ld hl, sp+$10
+	ldi a, (hl)
+	push af
+	ld a, (hl)
+	ld h, a
+	pop af
+	ld l, a
+	ld a, (hl)
+	swap a
+	and $0F
+	jr nz, _go
+	ld a, ($C0B1)
+_go:
+	pop hl
+	push af
+
 	;Switch this to HL >> 4, we want the index of the tiles directly.
 	;5:D000 block should just contain 16 bit pointers to the 11:4000 block
 
@@ -313,7 +333,7 @@ SpriteRecordAddr_FarCode:
 	rr l
 	srl h
 	rr l
-  	ld a, ($C0B1)
+  	pop af
   	sla a
   	sla a
   	add a, $40
