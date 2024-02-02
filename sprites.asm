@@ -471,6 +471,39 @@ MenuSpriteFarCode:
 	ld ($2100), a
 
 	ret
+
+BattleSpriteFarCode:
+	push bc
+	push af
+	ld a, $11
+	ld ($2100), a
+
+	;Get the tile number back
+	pop af
+
+	;load $D000 + A * 2 into HL
+	push hl
+	ld h, $D0
+	ld l, a
+	sla l
+
+	;load metatile bank from (HL) into HL
+	ldi a, (hl)
+	ld h, (hl)
+	ld l, a
+	
+	;Load metatile data from metatile rom bank into b
+	ld a, (hl)
+	ld b, a
+
+	ld a, $02
+	ld ($2100), a
+	pop hl
+
+	ld a, b
+	pop bc
+
+	ret
 SPRITECODE_FAR_END:
 .ENDS
 
@@ -513,4 +546,51 @@ MenuSpriteLoad:
 	inc c
 	dec b
 	ret
+.ENDS
+
+;Battle sprite code is very different, uses 8x16 sprites
+;02:4164 clears A and loads it into ram that appears to be the upper left of the hero
+
+;02:4128
+	;02:4154
+		;02:415C
+			;Loads $58 into (HL++)   		;Sprite Y Value
+			;Loads A (10) into (HL++)		;Sprite X Value
+			;Loads C*2 (6C) into (HL++)		;Sprite Tile Index
+			;Loads A (0) into (HL++)
+		;Same code executes again
+		;Loads $58 into (HL++)
+		;Loads A (70) into (HL++)
+		;Loads C*2 (78) into (HL++)
+		;Loads A (0) into (HL++)
+
+.BANK 2 SLOT 1
+.ORGA $4163
+.SECTION "BattleSpriteLoad_Hook" OVERWRITE
+	call BattleSpriteLoad
+.ENDS
+
+.BANK 0 SLOT 0
+.SECTION "BattleSpriteLoad_Code" FREE
+BattleSpriteLoad:
+	;original code, writes tile index
+	ldi (hl), a
+
+	;Switch banks
+	push af
+	ld a, WRAM_SPRITE_BANK
+	ldh (<SVBK), a
+	pop af
+
+	call WRAM_SPRITE_CODE + (BattleSpriteFarCode - SPRITECODE_FAR_START)
+	
+	;Switch banks back
+	push af
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+	pop af
+
+	ldi (hl), a
+
+	ret;
 .ENDS
