@@ -91,7 +91,7 @@ DxInit:
 ;18000 Metatile data (and map data?)
 ;1C000 Unknown
 ;20000 Unknown
-;24000 Unknown
+;24000 Menu code
 ;28000 Unknown
 ;2C000 Battle code
 ;30000 Unknown

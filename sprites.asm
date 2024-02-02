@@ -163,7 +163,7 @@ SpriteBank4Metadata:
 	;36 FAYE?
 	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00
 	;37 BORGIN
-	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00
+	.db FULL_YELLOW
 	;38 THE OTHER GUY
 	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00
 	;39 WATERHAG
@@ -187,6 +187,31 @@ SpriteBank4Metadata:
 .SECTION "SpriteLoadTile_Hook" OVERWRITE
 	call SpriteRecordAddr
 	jp $378A
+.ENDS
+
+.ORGA $233D
+.SECTION "SpriteUnsetAttributes_Hook" OVERWRITE
+	call SpriteUnsetAttributes
+.ENDS
+
+.ORGA $2387
+.SECTION "SpriteLowerLeftResetXFlip_Replacement" OVERWRITE
+	res 5, (hl)
+.ENDS
+
+.ORGA $2390
+.SECTION "SpriteLowerLeftSetXFlip_Replacement" OVERWRITE
+	set 5, (hl)
+.ENDS
+
+.ORGA $2398
+.SECTION "SpriteLowerRightResetXFlip_Replacement" OVERWRITE
+	res 5, (hl)
+.ENDS
+
+.ORGA $23A0
+.SECTION "SpriteLowerRightSetXFlip_Replacement" OVERWRITE
+	set 5, (hl)
 .ENDS
 
 .ORGA $3B33
@@ -216,8 +241,10 @@ SpriteBank4Metadata:
 ;RST $18 loads sprites, and it modifies the return stack to skip the byte after the RST $18 call, which it uses as the bank (!?)
 ;047C seems to be responsible for loading NPC sprite tiles to VRAM, using rst $18
 ;04BF seems to be responsible for loading visible player sprite tiles to VRAM, using rst $18
-
 ;07:7F09 seems to be the start of a bunch of other sprite loads... maybe a default set, since it looks hard-coded
+
+;2380 or so seems to be where menu sprites are animated
+;09:40f8 might be where they're loaded?
 
 ;TODO: Make this write two bytes per tile: BANK, (HL-$4000)/$40
 
@@ -283,7 +310,7 @@ SpriteSetPalette:
 
 	;Combine upper metadata from (DE) and combine with lower metadata from B
 ;	ld a, (de)
-	and $F0
+	and $E0
 	or b
 
 	pop bc
@@ -293,6 +320,17 @@ SpriteSetPalette:
 	inc de
 	ld a, l
 	ret
+
+SpriteUnsetAttributes:
+	ldi (hl), a
+	push af
+	ld a, (hl)
+	and $07
+	ld (hl), a
+	pop af
+	inc a 
+	ret
+
 .ENDS
 
 .BANK $10 SLOT 1
@@ -409,7 +447,70 @@ SpriteFarCode:
 	ld b, a
 
 	pop hl
+	ret
+
+MenuSpriteFarCode:
+	ld a, $11
+	ld ($2100), a
+
+	;load $D000 + C * 2 into HL
+	ld h, $D0
+	ld l, c
+	sla l
+
+	;load metatile bank from (HL) into HL
+	ldi a, (hl)
+	ld h, (hl)
+	ld l, a
+	
+	;Load metatile data from metatile rom bank into b
+	ld a, (hl)
+	ld b, a
+
+	ld a, $09
+	ld ($2100), a
 
 	ret
 SPRITECODE_FAR_END:
+.ENDS
+
+.BANK $9 SLOT 1
+.ORGA $40F7
+.SECTION "MenuSpriteLoad_Hook" OVERWRITE
+	call MenuSpriteLoad
+.ENDS
+
+.SECTION "MenuSprite_Code" FREE
+;a = attribute
+;b = remaining count
+;c = tile index
+;hl = destination
+MenuSpriteLoad:
+	push af
+	push bc
+	push hl
+	
+	;Switch banks
+	di
+	ld a, WRAM_SPRITE_BANK
+	ldh (<SVBK), a
+
+	call WRAM_SPRITE_CODE + (MenuSpriteFarCode - SPRITECODE_FAR_START)
+	
+	;Switch banks back
+	ld a, WRAM_DEFAULT_BANK
+	ldh (<SVBK), a
+	ei
+
+	;Replaces Original code
+	pop hl
+	ld a, b
+	ldi (hl), a
+
+	pop bc
+	pop af
+
+	inc c
+	dec b
+	ret
 .ENDS
