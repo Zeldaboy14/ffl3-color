@@ -14,17 +14,15 @@
 
 .SECTION "FadeOut_Code" FREE	
 FadeOut:
-;	di
-	push af
+	di
+	;push af
 
-	ld a, WRAM_PALETTE_BANK
-	ldh (<SVBK), a
+	SET_WRAMBANK WRAM_PALETTE_BANK
 	call WRAM_Fadeout
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
+	RESET_WRAMBANK
 
-	pop af
-;	ei
+	;pop af
+	ei
 
 	;Call the code replaced by the hook above
 	call $1F8D

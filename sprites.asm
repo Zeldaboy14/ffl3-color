@@ -223,7 +223,7 @@ SpriteBank4Metadata:
 
 .ORGA $3BFA
 .SECTION "SpriteLoadAttribute_Hook" OVERWRITE
-;	call SpriteSetPalette
+	call SpriteSetPalette
 .ENDS
 
 ;01:5460 looks like the function that loads sprites?
@@ -510,7 +510,7 @@ SPRITECODE_FAR_END:
 .BANK $9 SLOT 1
 .ORGA $40F7
 .SECTION "MenuSpriteLoad_Hook" OVERWRITE
-;	call MenuSpriteLoad
+	call MenuSpriteLoad
 .ENDS
 
 .SECTION "MenuSprite_Code" FREE
@@ -567,7 +567,7 @@ MenuSpriteLoad:
 .BANK 2 SLOT 1
 .ORGA $4163
 .SECTION "BattleSpriteLoad_Hook" OVERWRITE
-;	call BattleSpriteLoad
+	call BattleSpriteLoad
 .ENDS
 
 .BANK 0 SLOT 0
