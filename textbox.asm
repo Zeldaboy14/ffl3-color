@@ -5,15 +5,35 @@
 	call TextboxLoadLine
 .ENDS
 
+.ORGA $7995
+.SECTION "TextboxLoadTile_Hook" OVERWRITE
+	call TextboxLoadTile
+	;Modify the original loop to fit the call
+	jr nz, -5
+.ENDS
+
 .SECTION "TextboxDisplay_Code" FREE	
+TextboxLoadTile:
+	ld a, h
+	cp $9C
+	jr neq, _notTextbox
+	SET_VRAMBANK 1	
+	ld a, 7
+	ld (hl), a
+	RESET_VRAMBANK
+_notTextbox:
+	;Original code
+	ld a, d
+	ldi (hl), a
+	dec c
+	ret
+
 TextboxLoadLine:
 	push af
 	push bc
 	push hl
 	
-	
-	ld a, 1
-	ldh (<VBK), a
+	SET_VRAMBANK 1	
 	
 	ld c, 14
 _loop:
@@ -23,8 +43,7 @@ _loop:
 	dec c
 	jr nz, _loop
 
-	ld a, 0
-	ldh (<VBK), a
+	RESET_VRAMBANK
 	
 	pop hl
 	pop bc
