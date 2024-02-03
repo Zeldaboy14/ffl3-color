@@ -30,7 +30,7 @@ SpriteBank3Metadata:
 	;0F Boy
 	.db $02,$05,$02,$05,$02,$05,$02,$05, $02,$05,$02,$05,$02,$05,$02,$05
 	;10 Grandma
-	.db FULL_BROWN
+	.db $06,$07,$06,$07,$06,$07,$06,$07, $06,$07,$06,$07,$06,$07,$06,$07
 	;11 Grandpa
 	.db FULL_BROWN
 	;12 Scientist
