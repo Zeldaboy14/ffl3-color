@@ -6,13 +6,16 @@
 .DEFINE ENEMYB_ID $CC5A
 .DEFINE ENEMYC_ID $CC5B
 
-
 ;2120 load enemy tiles
 ;01:6066 erase background for battle
 ;0f:7966 erase enemy after dying
 ;D000 enemy tiles
 ;0B:42D5 loads sequential tiles for enemies into d000 block
 
+;01:5F28 might be a good place to white out the bg palette during battle load
+;0B:400D might be a good place to reload the bg palette
+
+;00:1126 calls the battle program?
 ;0B:4000 seems like its the start of the battle program, seems to take no params
 ;0B:405A is the topmost call of the battle program that loads the entirety of the tiles and tilemaps for enemies.
 ; ld a, $FF
@@ -178,6 +181,11 @@
 	call ClearMap
 .ENDS
 
+.ORGA $5F28
+.SECTION "ClearPalette_Hook" OVERWRITE
+	call ClearPalette
+.ENDS
+
 .SECTION "ClearMap_Code" FREE	
 ClearMap:
 	ld a, 1
@@ -186,8 +194,9 @@ ClearMap:
 	ld (hl), a
 	ldh (<VBK), a
 
-	ld a, $FF
+	dec a
 	ld (hl), a
+
 	ret
 .ENDS
 
@@ -195,6 +204,15 @@ ClearMap:
 .ORGA $2120
 .SECTION "EnemyLoadToVRAM_Hook" OVERWRITE
 	call EnemyLoad5ToVRAM
+.ENDS
+
+.SECTION "ClearPalette" FREE
+ClearPalette:
+	SET_WRAMBANK WRAM_BATTLE_BANK
+	call WRAM_BATTLE_CODE + ClearPalette_Far - BATTLECODE_FAR_START
+	RESET_WRAMBANK
+	call $218F
+	ret
 .ENDS
 
 ;$CC51~$CC59 or so contain the dimensions of each enemy in the battle, which is written to by $5BD5
@@ -206,6 +224,11 @@ ClearMap:
 ;CC6F is source tile number for the draw, and it changes by the time each is drawn
 
 .BANK $0B SLOT 1
+.ORGA $400D
+.SECTION "LoadBattlePalette_Hook" OVERWRITE
+	call LoadBattlePalette
+.ENDS
+
 .ORGA $406B
 .SECTION "StartBattle_Hook" OVERWRITE
 	call StartBattle
@@ -222,23 +245,6 @@ StartBattle:
 	push hl
 	push bc
 	push af
-
-	ld a, WRAM_PALETTE_BANK
-	ldh (<SVBK), a
-
-	ld a, 2
-	ld ($DFFF), a
-
-    ld hl,WRAM_BATTLEPALETTE_ADDR
-    ld a, $80           ; Set index to first color + auto-increment
-    ldh (<BCPS), a  ; 
-    ld b, 64                ; 64=0x40 bytes
-_PaletteLoop:
-    WAITBLANK
-    ldi a,(hl)
-    ldh (<BCPD),a
-    dec b
-    jr nz,_PaletteLoop
 
 	ld a, WRAM_BATTLE_BANK
 	ldh (<SVBK), a
@@ -298,6 +304,37 @@ _wait:
 	call $40BF
 	ret
 
+LoadBattlePalette:
+	push af
+	push bc
+	push hl
+
+	SET_WRAMBANK WRAM_PALETTE_BANK
+
+	ld a, 2
+	ld ($DFFF), a
+
+    ld hl,WRAM_BATTLEPALETTE_ADDR
+    ld a, $80           ; Set index to first color + auto-increment
+    ldh (<BCPS), a  ; 
+    ld b, 64                ; 64=0x40 bytes
+_PaletteLoop:
+    WAITBLANK
+    ldi a,(hl)
+    ldh (<BCPD),a
+    dec b
+    jr nz,_PaletteLoop
+
+	RESET_WRAMBANK
+
+    pop hl
+    pop bc
+    pop af
+
+    ;Original code
+    call $4444
+    ret
+
 EnemyLoadToRam:
 	di
 	push af
@@ -320,6 +357,18 @@ EnemyLoadToRam:
 .BANK $10 SLOT 1
 .SECTION "Battle_Code_Far" FREE	
 BATTLECODE_FAR_START:
+ClearPalette_Far:
+    ld a, $80           ; Set index to first color + auto-increment
+    ldh (<BCPS), a  ; 
+    ld b, 64                ; 64=0x40 bytes
+_PaletteLoop:
+    WAITBLANK
+    ld a, $FF
+    ldh (<BCPD),a
+    dec b
+    jr nz,_PaletteLoop
+	ret
+
 EnemyLoadToRam_Far:
 	push de
 
@@ -369,10 +418,8 @@ EnemyLoad5ToVRAM:
 
 	di
 
-	ld a, WRAM_BATTLE_BANK
-	ldh (<SVBK), a
-	ld a, 1
-	ldh (<VBK), a
+	SET_WRAMBANK WRAM_BATTLE_BANK
+	SET_VRAMBANK 1
 	push hl
 	push de
 
@@ -394,11 +441,8 @@ EnemyLoad5ToVRAM:
 	pop de
 	pop hl
 
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	xor a
-	ldh (<VBK), a
-
+	RESET_WRAMBANK
+	RESET_VRAMBANK
 	ei
 _done:
 
@@ -409,8 +453,7 @@ _done:
 	ret
 
 _textbox:
-	ld a, 1
-	ldh (<VBK), a
+	SET_VRAMBANK 1
 	push hl
 	push de
 	push de
@@ -423,7 +466,6 @@ _textbox:
 	ldi (hl), a
 	pop de
 	pop hl
-	xor a
-	ldh (<VBK), a
+	RESET_VRAMBANK
 	jr _done
 .ENDS

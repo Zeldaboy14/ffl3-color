@@ -38,8 +38,7 @@
 LoadMetatileRowToBuffer:
 	push hl
 	push de
-	push bc
-	push af
+;	push bc ;Don't need to push BC because original code loads it later
 	
 	ld h, METATILE_BUFFER_H
 	
@@ -65,8 +64,7 @@ LoadMetatileRowToBuffer:
 	SET_ROMBANK $06
 	RESET_WRAMBANK
 
-	pop af
-	pop bc
+;	pop bc
 	pop de
 	pop hl
 
@@ -81,8 +79,7 @@ LoadMetatileRowToBuffer:
 LoadMetatileColumnToBuffer:
 	push hl
 	push de
-	push bc
-	push af
+;	push bc ;Don't need to push BC because original code loads it later
 	
 	ld h, METATILE_BUFFER_H
 
@@ -106,8 +103,7 @@ LoadMetatileColumnToBuffer:
 	SET_ROMBANK $06
 	RESET_WRAMBANK
 
-	pop af
-	pop bc
+;	pop bc
 	pop de
 	pop hl
 
@@ -223,16 +219,10 @@ UpdateMapVRAM:
 .BANK $00 SLOT 0
 .SECTION "SwapBGAndWindowVRAM_Code" FREE
 SwapBGAndWindowVRAM:
-	push hl
-
 	SET_VRAMBANK 1
-
 	ld a, (de)
 	ld (hl), a
-
 	RESET_VRAMBANK
-	
-	pop hl
 	
 	;Currently this just replicates the five bytes that the call above overwrote
 	ld a, (de)
