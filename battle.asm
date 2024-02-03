@@ -194,7 +194,6 @@ ClearMap:
 .BANK $00 SLOT 0
 .ORGA $2120
 .SECTION "EnemyLoadToVRAM_Hook" OVERWRITE
-	;Enemies are always a multiple of 5 tiles wide?
 	call EnemyLoad5ToVRAM
 .ENDS
 
@@ -359,11 +358,14 @@ EnemyLoad5ToVRAM:
 ;out how to hook someplace that we can be certain already is doing enemy tiles.  But as it is now,
 ;checking the range ONCE for five writes is avoiding the crash.
 	ld a, h
+	and a, $F0
+	cp $90
+	jr equ, _textbox
 	cp $D0
-	jr lst, _no
+	jr lst, _done
 	ld a, d
 	cp $98
-	jr lst, _no
+	jr lst, _done
 
 	di
 
@@ -394,16 +396,34 @@ EnemyLoad5ToVRAM:
 
 	ld a, WRAM_DEFAULT_BANK
 	ldh (<SVBK), a
-	ld a, 0
+	xor a
 	ldh (<VBK), a
 
 	ei
-_no:
+_done:
 
 	;Currently this just replicates the three bytes that the call above overwrote
 	ldi a, (hl)
 	ld (de), a
 	inc de
-
 	ret
+
+_textbox:
+	ld a, 1
+	ldh (<VBK), a
+	push hl
+	push de
+	push de
+	pop hl
+	ld a, 7
+	ldi (hl), a
+	ldi (hl), a
+	ldi (hl), a
+	ldi (hl), a
+	ldi (hl), a
+	pop de
+	pop hl
+	xor a
+	ldh (<VBK), a
+	jr _done
 .ENDS
