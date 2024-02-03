@@ -43,10 +43,8 @@ LoadMetatileRowToBuffer:
 	
 	ld h, METATILE_BUFFER_H
 	
-	ld a, $16
-	ld (CHANGE_BANK), a
-	ld a, WRAM_METATILE_BANK
-	ldh (<SVBK), a
+	SET_ROMBANK $16
+	SET_WRAMBANK WRAM_METATILE_BANK
 	
 	ld a, (de)
 	ldi (hl), a
@@ -64,10 +62,8 @@ LoadMetatileRowToBuffer:
 	ld a, (de)
 	ld (hl), a
 
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	ld a, $06
-	ld (CHANGE_BANK), a
+	SET_ROMBANK $06
+	RESET_WRAMBANK
 
 	pop af
 	pop bc
@@ -90,10 +86,8 @@ LoadMetatileColumnToBuffer:
 	
 	ld h, METATILE_BUFFER_H
 
-	ld a, $16
-	ld (CHANGE_BANK), a
-	ld a, WRAM_METATILE_BANK
-	ldh (<SVBK), a
+	SET_ROMBANK $16
+	SET_WRAMBANK WRAM_METATILE_BANK
 
 	ld a, (de)
 	ldi (hl), a
@@ -109,10 +103,8 @@ LoadMetatileColumnToBuffer:
 	ld a, (de)
 	ld (hl), a
 
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	ld a, $06
-	ld (CHANGE_BANK), a
+	SET_ROMBANK $06
+	RESET_WRAMBANK
 
 	pop af
 	pop bc
@@ -144,23 +136,19 @@ LoadMetatileColumnToBuffer:
 .SECTION "LoadBufferToStage_Code" FREE
 LoadBufferToStage:
 	push hl
-	push af
 	push de
 	ld d, METATILE_BUFFER_H
 	ld h, METATILE_STAGE_H
 	
-	ld a, WRAM_METATILE_BANK
-	ldh (<SVBK), a
+	SET_WRAMBANK WRAM_METATILE_BANK
 	
 _loop:
 	ld a, (de)
 	ldi (hl), a
 
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
+	RESET_WRAMBANK
 
 	pop de
-	pop af
 	pop hl
 	
 	;Currently this just replicates the three bytes that the call above overwrote
@@ -188,25 +176,18 @@ _loop:
 .SECTION "UpdateMapVRAMCode" FREE
 UpdateMapVRAM:
 	push hl
-	push af
 
 	ld h, METATILE_STAGE_H
 
-	ld a, 1
-	ldh (<VBK), a
-	ld a, WRAM_METATILE_BANK
-	ldh (<SVBK), a
+	SET_VRAMBANK 1
+	SET_WRAMBANK WRAM_METATILE_BANK
 
 	ldi a, (hl)
 	ld (de), a
-	ld a, e
 
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	ld a, 0
-	ldh (<VBK), a
+	RESET_WRAMBANK
+	RESET_VRAMBANK
 	
-	pop af
 	pop hl
 	
 	;Currently this just replicates the three bytes that the call above overwrote
@@ -243,18 +224,14 @@ UpdateMapVRAM:
 .SECTION "SwapBGAndWindowVRAM_Code" FREE
 SwapBGAndWindowVRAM:
 	push hl
-	push af
 
-	ld a, 1
-	ldh (<VBK), a
+	SET_VRAMBANK 1
 
 	ld a, (de)
 	ld (hl), a
 
-	ld a, 0
-	ldh (<VBK), a
+	RESET_VRAMBANK
 	
-	pop af
 	pop hl
 	
 	;Currently this just replicates the five bytes that the call above overwrote
@@ -281,28 +258,22 @@ SwapBGAndWindowVRAM:
 .SECTION "LoadBufferToVRAM_Code" FREE
  LoadBufferToVRAM:
 	push hl
-	push af
 	push de
 	
 	ld d, METATILE_BUFFER_H
 		
-	ld a, 1
-	ldh (<VBK), a
-	ld a, WRAM_METATILE_BANK
-	ldh (<SVBK), a
+	SET_VRAMBANK 1
+	SET_WRAMBANK WRAM_METATILE_BANK
 
 _loop:
 	ld a, (de)
 	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
 
 	pop de
-	pop af
 	pop hl
 	
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	ld a, 0
-	ldh (<VBK), a
+	RESET_WRAMBANK
+	RESET_VRAMBANK
 	
 	;Currently this just replicates the three bytes that the call above overwrote
 	ld a, (de)
