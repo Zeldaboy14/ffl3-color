@@ -6,6 +6,93 @@
 .DEFINE ENEMYB_ID $CC5A
 .DEFINE ENEMYC_ID $CC5B
 
+.BANK $00 SLOT 0
+.ORGA $2120
+.SECTION "EnemyLoadToVRAM_Hook" OVERWRITE
+	call EnemyLoad5ToVRAM
+.ENDS
+
+.SECTION "ClearPalette" FREE
+ClearPalette:
+	SET_WRAMBANK WRAM_BATTLE_BANK
+	call WRAM_BATTLE_CODE + ClearPalette_Far - BATTLECODE_FAR_START
+	RESET_WRAMBANK
+	call $218F
+	ret
+.ENDS
+
+.SECTION "BattleBase_Code" FREE
+;Should probably move this from battle and call it Load5TileIDsToVRAM.
+EnemyLoad5ToVRAM:
+;NOTE: This code must be FAST to eliminate a race condition on the last boss.
+;The Xagor effect removes the vblank hook and before it puts a new one in, vblank has happened.
+;This hook currently has to check to see if its writing enemy tiles - we should probably figure
+;out how to hook someplace that we can be certain already is doing enemy tiles.  But as it is now,
+;checking the range ONCE for five writes is avoiding the crash.
+	ld a, h
+	and a, $F0
+	cp $90
+	jr equ, _textbox
+	cp $D0
+	jr lst, _done
+	ld a, d
+	cp $98
+	jr lst, _done
+
+	di
+
+	SET_WRAMBANK WRAM_BATTLE_BANK
+	SET_VRAMBANK 1
+	push hl
+	push de
+
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ldi a, (hl)
+	ld (de), a
+
+	pop de
+	pop hl
+
+	RESET_WRAMBANK
+	RESET_VRAMBANK
+	ei
+_done:
+
+	;Currently this just replicates the three bytes that the call above overwrote
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	ret
+
+_textbox:
+	SET_VRAMBANK 1
+	push hl
+	push de
+	push de
+	pop hl
+	ld a, 7
+	ldi (hl), a
+	ldi (hl), a
+	ldi (hl), a
+	ldi (hl), a
+	ldi (hl), a
+	pop de
+	pop hl
+	RESET_VRAMBANK
+	jr _done
+.ENDS
+
 ;2120 load enemy tiles
 ;01:6066 erase background for battle
 ;0f:7966 erase enemy after dying
@@ -200,18 +287,61 @@ ClearMap:
 	ret
 .ENDS
 
-.BANK $00 SLOT 0
-.ORGA $2120
-.SECTION "EnemyLoadToVRAM_Hook" OVERWRITE
-	call EnemyLoad5ToVRAM
+;02:41CA looks responsible for loading spell sprites - if we can trap the source
+;address we can probably colorize the first 30 OAM entries based on a lookup from
+;the source address
+;Looks like a lot of the basic spells share the same data block of 658C, each using
+;different subsets of the tiles
+;02:4FCA loads zero into the attribute byte
+
+;658C: Magma, Quake, Lit 1, Lit 2, Ice 2
+;68AC: Durend
+;6A2C: Sword
+;6AAC: XCalibur
+;6ACC: Gungnir
+;6C8C: Fatal
+;75CC: Aero
+;79EC: Flare, Fire 2, LitX
+;DE61: Numbers and Missed
+
+.BANK $02 SLOT 1
+.ORGA $41CA
+.SECTION "StoreEffectSpriteIDs_Hook" OVERWRITE
+	call StoreEffectSpriteIDs
 .ENDS
 
-.SECTION "ClearPalette" FREE
-ClearPalette:
+.BANK $02 SLOT 1
+.ORGA $42A8
+.SECTION "LoadEffectSpriteAttributes_Hook" OVERWRITE
+	call LoadEffectSpriteAttributes
+	and a, $07
+.ENDS
+
+.BANK $02 SLOT 1
+.SECTION "SpriteIDs_Code" FREE
+StoreEffectSpriteIDs:
+	push af
+	di
 	SET_WRAMBANK WRAM_BATTLE_BANK
-	call WRAM_BATTLE_CODE + ClearPalette_Far - BATTLECODE_FAR_START
+	pop af
+	call WRAM_BATTLE_CODE + StoreEffectSpriteIDs_Far - BATTLECODE_FAR_START
+	push af
 	RESET_WRAMBANK
-	call $218F
+	ei
+	pop af
+
+	;original code
+	call $20FF
+	ret
+
+LoadEffectSpriteAttributes:
+	di
+	SET_WRAMBANK WRAM_BATTLE_BANK
+	call WRAM_BATTLE_CODE + LoadEffectSpriteAttributes_Far - BATTLECODE_FAR_START
+	push af
+	RESET_WRAMBANK
+	ei
+	pop af
 	ret
 .ENDS
 
@@ -395,77 +525,201 @@ EnemyLoadToRam_Far:
 	ld (hl), a
 
 	ret
+
+;bc is count
+;de is destination
+;hl is source
+StoreEffectSpriteIDs_Far:
+	push hl
+	push de
+	push af
+	push bc
+
+	SET_ROMBANK $1B
+
+	push hl
+	push de
+	push bc
+	ld hl, DEFAULT_EFFECT_PALETTES
+	ld de, WRAM_BATTLE_EFFECTIDS_ADDR
+	ld b, $6C
+_defaultLoop:
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec b
+	jr nz, _defaultLoop
+	pop bc
+	pop de
+	pop hl
+
+	;Subtract $6500 from HL
+	ld a, h
+	sub a, $65
+	ld h, a
+
+	;Divide HL by $10
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+
+  	;Add $4000 to HL
+  	ld a, h
+  	add a, $40
+  	ld h, a
+
+  	;Copy to HL
+	push hl
+	pop de
+
+	;Divide BC by $10 - safe to assume it will be 8 bit afterwards (PRETTY SURE it'll always be $20)
+	srl b
+	rr c
+	srl b
+	rr c
+	srl b
+	rr c
+	srl b
+	rr c
+
+	ld hl, WRAM_BATTLE_EFFECTIDS_ADDR
+
+_storeLoop:
+	ld a, (de)
+	ldi (hl), a
+	inc de
+	dec c
+	jr nz, _storeLoop
+
+	SET_ROMBANK $02
+
+	pop bc
+	pop af
+	pop de
+	pop hl
+	ret
+
+;a is game-native attribute
+;c is count
+;hl is destination (C000~C09F)
+LoadEffectSpriteAttributes_Far:
+	push de
+	push bc
+
+	dec hl
+	ldi a, (hl)
+	ld e, a
+	ld d, >WRAM_BATTLE_EFFECTIDS_ADDR
+
+	ld a, (de)
+	or b
+
+	pop bc
+	pop de
+	ret
+
 BATTLECODE_FAR_END:
 .ENDS
 
-.BANK $00 SLOT 0
-.SECTION "BattleBase_Code" FREE
-EnemyLoad5ToVRAM:
-;NOTE: This code must be FAST to eliminate a race condition on the last boss.
-;The Xagor effect removes the vblank hook and before it puts a new one in, vblank has happened.
-;This hook currently has to check to see if its writing enemy tiles - we should probably figure
-;out how to hook someplace that we can be certain already is doing enemy tiles.  But as it is now,
-;checking the range ONCE for five writes is avoiding the crash.
-	ld a, h
-	and a, $F0
-	cp $90
-	jr equ, _textbox
-	cp $D0
-	jr lst, _done
-	ld a, d
-	cp $98
-	jr lst, _done
+.define EFFECT_GRAY 	$00,$00,$00,$00
+.define EFFECT_RED 		$01,$01,$01,$01
+.define EFFECT_YELLOW 	$02,$02,$02,$02
+.define EFFECT_GREEN	$03,$03,$03,$03
+.define EFFECT_AQUA 	$04,$04,$04,$04
+.define EFFECT_BLUE 	$05,$05,$05,$05
+.define EFFECT_PURPLE 	$06,$06,$06,$06
+.define EFFECT_BROWN 	$07,$07,$07,$07
 
-	di
+;658C: Magma, Quake, Lit 1, Lit 2, Ice 2
+;68AC: Durend
+;6A2C: Sword
+;6AAC: XCalibur
+;6ACC: Gungnir
+;6C8C: Fatal
+;75CC: Aero
+;79EC: Flare, Fire 2, LitX
 
-	SET_WRAMBANK WRAM_BATTLE_BANK
-	SET_VRAMBANK 1
-	push hl
-	push de
+;414E: FIRE2
 
-	ldi a, (hl)
-	ld (de), a
-	inc de
-	ldi a, (hl)
-	ld (de), a
-	inc de
-	ldi a, (hl)
-	ld (de), a
-	inc de
-	ldi a, (hl)
-	ld (de), a
-	inc de
-	ldi a, (hl)
-	ld (de), a
-
-	pop de
-	pop hl
-
-	RESET_WRAMBANK
-	RESET_VRAMBANK
-	ei
-_done:
-
-	;Currently this just replicates the three bytes that the call above overwrote
-	ldi a, (hl)
-	ld (de), a
-	inc de
-	ret
-
-_textbox:
-	SET_VRAMBANK 1
-	push hl
-	push de
-	push de
-	pop hl
-	ld a, 7
-	ldi (hl), a
-	ldi (hl), a
-	ldi (hl), a
-	ldi (hl), a
-	ldi (hl), a
-	pop de
-	pop hl
-	RESET_VRAMBANK
-	jr _done
+.BANK $1B SLOT 1
+.ORGA $4000
+.SECTION "EffectPalettes_Data" OVERWRITE
+EffectPalettes:
+	;4000 (02:6000)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;4010 (02:6100)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;4020 (02:6200)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;4030 (02:6300)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$05,$05, $05,$05,$05,$05;					SWORD	SWORD
+	;4040 (02:6400)
+	.db $05,$05,$05,$05, $05,$05,$05,$05, $05,$05,$05,$05, $05,$05,$05,$05; SWORD	SWORD	SWORD	SWORD
+	;4050 (02:6500)
+	.db $05,$05,$05,$05, $05,$05,$05,$05, $05,$05,$07,$07, $07,$07,$07,$07;	SWORD	SWORD	SWORD	GUNGNIR
+	;4060 (02:6600)
+	.db $07,$07,$07,$07, $07,$07,$07,$07, $07,$07,$07,$07, $07,$07,$07,$07;	GUNGNIR	GUNGNIR	GUNGNIR GUNGNIR
+	;4070 (02:6700)
+	.db $07,$07,$07,$07, $07,$07,$07,$07, $06,$06,$06,$06, $06,$06,$06,$06; GUNGNIR GUNGNIR FATAL	FATAL
+	;4080 (02:6800)
+	.db $06,$06,$06,$06, $06,$06,$06,$06, $06,$06,$06,$06, $06,$06,$06,$06;	FATAL	FATAL	FATAL	FATAL
+	;4090 (02:6900)
+	.db $06,$06,$06,$06, $06,$06,$06,$06, $00,$00,$00,$00, $00,$00,$00,$00;	FATAL	FATAL
+	;40A0 (02:6A00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;40B0 (02:6B00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;40C0 (02:6C00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;40D0 (02:6D00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;40E0 (02:6E00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $06,$06,$06,$06, $06,$06,$06,$60;					MUTE	MUTE
+	;40F0 (02:6F00)
+	.db $06,$06,$06,$06, $06,$06,$06,$06, $06,$06,$06,$06, $06,$06,$06,$06;	MUTE	MUTE	MUTE	MUTE
+	;4100 (02:7000)
+	.db $06,$06,$06,$06, $06,$06,$06,$06, $00,$00,$00,$00, $03,$03,$03,$03; MUTE	MUTE			AERO
+	;4110 (02:7100)
+	.db $03,$03,$03,$03, $03,$03,$03,$03, $03,$03,$03,$03, $03,$03,$03,$03;	AERO	AERO	AERO	AERO
+	;4120 (02:7200)
+	.db $03,$03,$03,$03, $03,$03,$03,$03, $03,$03,$03,$03, $00,$00,$00,$00;	AERO	AERO	AERO
+	;4130 (02:7300)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;4140 (02:7400)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$01,$01;							FLARE
+	;4150 (02:7500)
+	.db $01,$01,$01,$01, $01,$01,$01,$01, $01,$01,$01,$01, $01,$01,$01,$01;	FLARE	FLARE	FLARE	FLARE
+	;4160 (02:7600)
+	.db $01,$01,$01,$01, $01,$01,$01,$01, $01,$01,$01,$01, $01,$01,$00,$00;	FLARE	FLARE	FLARE
+	;4170 (02:7700)
+	.db $00,$00,$00,$00, $00,$00,$02,$02, $02,$02,$02,$02, $02,$02,$02,$02;			PBLAST	PBLAST	PBLAST
+	;4180 (02:7800)
+	.db $02,$02,$02,$02, $02,$02,$02,$02, $02,$02,$02,$02, $02,$02,$02,$02;	PBLAST	PBLAST	PBLAST	PBLAST
+	;4190 (02:7900)
+	.db $02,$02,$02,$02, $00,$00,$00,$00, $00,$00,$04,$04, $04,$04,$04,$04;	PBLAST			SLEEP	SLEEP
+	;41A0 (02:7A00)
+	.db $04,$04,$04,$04, $04,$04,$04,$04, $04,$04,$04,$04, $04,$04,$04,$04;	SLEEP	SLEEP	SLEEP	SLEEP
+	;41B0 (02:7B00)
+	.db $04,$04,$04,$04, $04,$04,$04,$04, $04,$04,$00,$00, $00,$00,$00,$00;	SLEEP	SLEEP
+	;41C0 (02:7C00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;41D0 (02:7D00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;41E0 (02:7E00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	;41F0 (02:7F00)
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+DEFAULT_EFFECT_PALETTES:
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	.db $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00, $00,$00,$00,$00
+	.db $00,$00,$00,$00, $00,$00,$04,$04, $04,$04,$04,$04, $04,$04,$01,$01
+	.db $01,$01,$01,$01, $01,$01,$01,$01, $01,$01,$01,$01, $01,$01,$04,$04
+	.db $02,$02,$02,$02, $02,$02,$02,$02, $02,$02,$02,$02, $02,$02,$02,$02
+	.db $04,$04,$04,$04, $03,$03,$03,$03, $03,$03,$03,$03, $03,$03,$03,$03
+	.db $03,$03,$03,$03, $02,$02,$02,$02, $06,$06,$06,$06
 .ENDS
