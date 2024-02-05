@@ -44,7 +44,9 @@
 .include "font.asm"
 .include "fade.asm"
 .include "enemies.asm"
+.include "menu.asm"
 .include "battle.asm"
+.include "title.asm"
 .include "system.asm"
 
 .BANK 0 SLOT 0
@@ -65,9 +67,7 @@ DxInit:
 	ld a, 0x10
 	ld (CHANGE_BANK), a
 
-	call InitializeWRAM
-	call InitializePalettes
-    call CopyFarCodeToRAM
+	call Initialize
 
 	ld a, 0x1
 	ld (CHANGE_BANK), a

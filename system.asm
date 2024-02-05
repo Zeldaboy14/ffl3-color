@@ -1,5 +1,13 @@
 .BANK $10 SLOT 1
 .SECTION "System_Code" FREE	
+Initialize:
+	call InitializeWRAM
+	call InitializePalettes
+    call CopyFarCodeToRAM
+
+    call InitializeTitle
+    ret;
+
 InitializeWRAM:
 	ld b, 2
 _InitializeWRAMBankLoop:
@@ -280,5 +288,52 @@ LoadFadeBlack:
 	
 	pop bc
 	pop af
+	ret
+
+InitializeTitle:
+	ld hl, $9D60
+	ld c, $01
+	SET_VRAMBANK 1
+_loopMapRow:
+	ld b, $20
+_loopMapColumn:
+	WAITBLANK
+	ld a, c
+	ldi (hl), a
+	dec b
+	jr nz, _loopMapColumn
+	inc c
+	cp $07
+	jr lst, _loopMapRow
+	RESET_VRAMBANK
+
+	ld hl, SwordTiles
+	ld de, $8300
+	ld bc, SwordTilesEnd - SwordTiles
+_loopSpriteTiles:
+	WAITBLANK
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _loopSpriteTiles
+
+	ld hl, SwordOAM
+	ld de, $C000
+	ld bc, SwordOAMEnd - SwordOAM
+_loopSpriteOAM:
+	WAITBLANK
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _loopSpriteOAM
+
 	ret
 .ENDS
