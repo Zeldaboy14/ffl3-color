@@ -38,6 +38,9 @@ FadeOut_Far:
 	push bc
 	push de
 	push hl
+
+	ld a, $FF
+	ld d, a
 	
 	ld a, l
 	sub a, $b4
@@ -50,6 +53,10 @@ _notzero:
 	ld a, ($DFFE)
 	cp c
 	jr equ, _done
+
+	ld a, ($DFFF)
+	ld d, a
+
 	ld a, c
 	ld ($DFFE), a
 
@@ -103,12 +110,41 @@ _LoopOBJPAL:
     jr nz,_LoopOBJPAL
 	
 _done:
+	;If we just faded the title in, do the title hack
+	ld a, d
+	swap a
+	or c
+	cp $30
+	jr equ, TitleHack
+	cp $31
+	jr equ, UndoTitleHack
 
 	pop hl
 	pop de
 	pop bc
 	pop af
 	ret
+
+TitleHack:
+	SET_ROMBANK $10
+	call InitializeTitleSword
+	SET_ROMBANK $01
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
+UndoTitleHack:
+	SET_ROMBANK $10
+	call DestroyTitleSword
+	SET_ROMBANK $01
+	pop hl
+	pop de
+	pop bc
+	pop af
+	ret
+
 FADECODE_FAR_END:
 .ENDS
 

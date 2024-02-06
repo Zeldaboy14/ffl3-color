@@ -306,6 +306,29 @@ _loopMapColumn:
 	cp $07
 	jr lst, _loopMapRow
 	RESET_VRAMBANK
+	ret
+
+InitializeTitleSword:
+	ld a, ($DFFD)
+	cp a, 0
+	ret nz
+	ld a, 1
+	ld ($DFFD), a
+
+	ld de, $8000
+	ld bc, $0200
+_clearMushrooms:
+	WAITBLANK
+	xor a
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _clearMushrooms
+
+
 
 	ld hl, SwordTiles
 	ld de, $8300
@@ -335,5 +358,39 @@ _loopSpriteOAM:
 	or c
 	jp nz, _loopSpriteOAM
 
+    ld hl, SwordPalette
+    ld a, $88       ; Set index to second palette + auto-increment
+    ldh (<OCPS), a
+    ld b, 32
+_loopSpritePalette:
+    WAITBLANK
+    ldi a, (hl)
+    ldh (<OCPD), a
+    dec b
+    jr nz, _loopSpritePalette
+
 	ret
+
+DestroyTitleSword:
+	ld a, ($DFFD)
+	cp a, 1
+	ret nz
+	ld a, 2
+	ld ($DFFD), a
+
+	ld hl, UndoSwordOAM
+	ld de, $C000
+	ld bc, UndoSwordOAMEnd - UndoSwordOAM
+_loopUndoSpriteOAM:
+	WAITBLANK
+	ldi a, (hl)
+	ld (de), a
+	inc de
+	dec bc
+	;dec bc does not set the z flag for some dumb reason, so oring b and c here
+	ld a, b
+	or c
+	jp nz, _loopUndoSpriteOAM
+	ret
+
 .ENDS
