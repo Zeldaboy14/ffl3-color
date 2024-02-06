@@ -47,6 +47,11 @@ _notzero:
 	srl a
 	srl a
 	ld c, a
+	ld a, ($DFFE)
+	cp c
+	jr equ, _done
+	ld a, c
+	ld ($DFFE), a
 
 	cp 2
 	jr neq, _dontresetpalette
@@ -97,6 +102,8 @@ _LoopOBJPAL:
     dec b
     jr nz,_LoopOBJPAL
 	
+_done:
+
 	pop hl
 	pop de
 	pop bc
