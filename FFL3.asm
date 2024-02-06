@@ -77,6 +77,29 @@ DxInit:
     ret
 .ENDS
 
+.BANK $09 SLOT 1
+.ORGA $4ECF
+.SECTION "RemoveMBC1Call_00" OVERWRITE
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+.ENDS
+
+.ORGA $4EE0
+.SECTION "RemoveMBC1Call_01" OVERWRITE
+	nop
+	nop
+	nop
+	nop
+	nop
+.ENDS
+
 .BANK $1F SLOT 1
 .ORGA $7FFF
 .SECTION "The End" OVERWRITE
