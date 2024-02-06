@@ -462,6 +462,10 @@ MenuSpriteFarCode:
 	ldi a, (hl)
 	ld h, (hl)
 	ld l, a
+
+	ld a, h
+	cp $40
+	jr lst, _cancelMenuSprite
 	
 	;Load metatile data from metatile rom bank into b
 	ld a, (hl)
@@ -469,7 +473,14 @@ MenuSpriteFarCode:
 
 	ld a, $09
 	ld ($2100), a
+	ret
 
+_cancelMenuSprite:
+	;Fixes screwed up sprites in the continue menu, but does not colorize them.
+	xor a
+	ld b, a
+	ld a, $09
+	ld ($2100), a
 	ret
 
 BattleSpriteFarCode:
