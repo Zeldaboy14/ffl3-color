@@ -1,1 +1,1 @@
-Powershell -executionpolicy remotesigned -Command "./compile.ps1 'Final Fantasy Legend III (USA).gb' FFL3.asm FFL3.gbc"
+Powershell -executionpolicy remotesigned -Command "./compile.ps1 'src/Final Fantasy Legend III (USA).gb' src/FFL3.asm FFL3.gbc"

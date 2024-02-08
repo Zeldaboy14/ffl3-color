@@ -1,6 +1,6 @@
-$inputROM=$args[0]
-$inputASM=$args[1]
-$output=$args[2]
+$inputROM=[System.IO.Path]::GetFullPath($args[0])
+$inputASM=[System.IO.Path]::GetFullPath($args[1])
+$output=[System.IO.Path]::GetFullPath($args[2])
 
 $compilation = {
     $rev = (Get-Content $inputROM -Encoding Byte -ReadCount 1)[332]
@@ -11,8 +11,8 @@ $compilation = {
         rm $output
     }
     echo "[objects]`r`noutput.o" | out-file -encoding ASCII temp.prj
-    wladx/wla-gb -D REV=$rev -D ENG=$english -o output.o $inputASM
-    wladx/wlalink -s temp.prj $output
+    ../wladx/wla-gb -D REV=$rev -D ENG=$english -o output.o $inputASM
+    ../wladx/wlalink -s temp.prj $output
     rm temp.prj
 
     if (Test-Path -Path $output -PathType Leaf){
@@ -22,4 +22,6 @@ $compilation = {
     }
 }
 
+Push-Location .\src
 &$compilation
+Pop-Location

@@ -116,7 +116,7 @@ _done:
 	or c
 	cp $30
 	jr equ, TitleHack
-	cp $31
+	cp $32
 	jr equ, UndoTitleHack
 
 	pop hl
