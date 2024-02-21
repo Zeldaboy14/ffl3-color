@@ -1,187 +1,8 @@
-.DEFINE WRAM_SPRITE_CODE		$D800
-;Sprite tiles are found roughly between $10000 and $18000 in ROM.  We only care about them in $40 byte blocks
+.include "spriteattr.asm"
 
-.DEFINE FULL_GRAY	$00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00
-.DEFINE FULL_RED	$01,$01,$01,$01,$01,$01,$01,$01, $01,$01,$01,$01,$01,$01,$01,$01
-.DEFINE FULL_YELLOW	$02,$02,$02,$02,$02,$02,$02,$02, $02,$02,$02,$02,$02,$02,$02,$02
-.DEFINE FULL_GREEN	$03,$03,$03,$03,$03,$03,$03,$03, $03,$03,$03,$03,$03,$03,$03,$03
-.DEFINE FULL_CYAN	$04,$04,$04,$04,$04,$04,$04,$04, $04,$04,$04,$04,$04,$04,$04,$04
-.DEFINE FULL_BLUE	$05,$05,$05,$05,$05,$05,$05,$05, $05,$05,$05,$05,$05,$05,$05,$05
-.DEFINE FULL_PURPLE	$06,$06,$06,$06,$06,$06,$06,$06, $06,$06,$06,$06,$06,$06,$06,$06
-.DEFINE FULL_BROWN	$07,$07,$07,$07,$07,$07,$07,$07, $07,$07,$07,$07,$07,$07,$07,$07
-
-.BANK $11 SLOT 1
-.ORGA $4C80
-.SECTION "SpriteBank3_Data" OVERWRITE
-SpriteBank3Metadata:
-	;08 Invalid
-	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00
-	;09 Red Mage?
-	.db FULL_RED
-	;0A Elder?
-	.db FULL_YELLOW
-	;0B Myron?
-	.db FULL_BLUE
-	;0C Guard?
-	.db FULL_GREEN
-	;0D Girl
-	.db $02,$01,$02,$01,$02,$02,$02,$02, $02,$01,$02,$01,$02,$01,$02,$01
-	;0E Man
-	.db $07,$05,$07,$05,$07,$05,$07,$05, $07,$05,$07,$05,$07,$05,$07,$05
-	;0F Boy
-	.db $02,$05,$02,$05,$02,$05,$02,$05, $02,$05,$02,$05,$02,$05,$02,$05
-	;10 Grandma
-	.db $06,$07,$06,$07,$06,$07,$06,$07, $06,$07,$06,$07,$06,$07,$06,$07
-	;11 Grandpa
-	.db FULL_BROWN
-	;12 Scientist
-	.db FULL_BROWN
-	;13 Guy from the cave (and treasure box)
-	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$01,$01,$01,$01
-	;14 Menu stuff
-	.db $00,$00,$00,$00,$00,$00,$00,$00, $01,$01,$01,$01,$01,$01,$01,$01
-	;15 Misc monsters
-	.db FULL_BROWN
-	;16 Misc monsters
-	.db FULL_BROWN
-	;17 Misc UI
-	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00
-	;18 Misc
-	.db $00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$01,$01,$01,$01
-.ENDS
-
-.ORGA $5000
-.SECTION "SpriteBank4_Data" OVERWRITE
-SpriteBank4Metadata:
-	;00 Fungus/Mushroom
-	.db FULL_BROWN
-	;01 Starfish/Pentagon
-	.db FULL_PURPLE
-	;02 F-Drake/F-Liz/Salamand
-	.db FULL_GREEN
-	;03 Raven/Amprex/Griffon
-	.db FULL_CYAN
-	;04 Worm/Landworm/Gigaworm
-	.db FULL_YELLOW
-	;05 Turtle/Adamant/Igasaur
-	.db FULL_GREEN
-	;06 Whisper/Fireball
-	.db FULL_RED
-	;07 BIG EYE/EVIL EYE
-	.db FULL_RED
-	;08 BLACK CAT/MUMMYCAT
-	.db FULL_PURPLE
-	;09 SQUID/AMOEBA
-	.db FULL_BLUE
-	;0A TIRE/WHEEL/FIREFAN
-	.db FULL_RED
-	;0B BABYWYRM/WYRM KID/WYRM
-	.db FULL_YELLOW
-	;0C WOLF/GREYWOLF/ROMULUS
-	.db FULL_BROWN
-	;0D RAY/DRAINRAY/BOLTRAY
-	.db FULL_BLUE
-	;0E D.BONE/D.FOSSIL
-	.db FULL_GRAY
-	;0F TYPHOON/TEMPEST
-	.db FULL_CYAN
-	;10 SCORPION/HUNTER
-	.db FULL_YELLOW
-	;11 ANGLER/BULBFISH
-	.db FULL_CYAN
-	;12 DUALMASK/EVILMASK
-	.db FULL_RED
-	;13 GHOST/SPECTER
-	.db FULL_GRAY
-	;14 SNAKE/SERPENT/HYDRA
-	.db FULL_GREEN
-	;15 OCTOPUS/AMMONITE/KRAKEN
-	.db FULL_PURPLE
-	;16 BABY-D/YOUNG-D/SEI-RYU
-	.db FULL_GREEN
-	;17 GARGOYLE/REMORA/GARUDA
-	.db FULL_GRAY
-	;18 SILVER/KELPIE/MUSTANG/CENTAUR/NITEMARE
-	.db FULL_YELLOW
-	;19 ORC-ORC/MAD BOAR/PIRATE/WEREPIG/VIKING
-	.db FULL_YELLOW
-	;1A DIVINER/BROOMER/WITCH/MAGICIAN/WIZARD
-	.db FULL_PURPLE
-	;1B SPRITE/NYMPH/FAIRY/PIXIE/SYLPH
-	.db FULL_PURPLE
-	;1C MEDUSA/LAMIA/NAGA/SCYLLA/ECHIDNA
-	.db FULL_GREEN
-	;1D FISH MAN/MERMAN/NIX/SELKIE/GILL MAN
-	.db FULL_GREEN
-	;1E WATCHER/HERMIT/MAGE/SORCERER/WARLOCK
-	.db FULL_PURPLE
-	;1F THANOS/SOARX/SIREN/SUCCUBUS/SPHINX
-	.db FULL_PURPLE
-	;20 FIGHTER/WARRIOR/LIZ MAN/LIZ DUKE/LIZ KING
-	.db FULL_GREEN
-	;21 SEAMONK/SALTMONK/BROODER/BIG HEAD/DAGON
-	.db FULL_CYAN
-	;22 THOTH/HORUS/OSIRIS/SET/ANUBIS
-	.db FULL_BROWN
-	;23 FAMILIAR/FIEND/LOKI/MEPHISTO/AESHMA
-	.db FULL_RED
-	;24 HOOLIGAN/THIEF/BURGLER/BRIGAND/OUTLAW
-	.db FULL_BROWN
-	;25 QUACKY/STRANGER/IMPOSTER/LOONYGUY/CRACKER
-	.db FULL_GRAY
-	;26 SOLDIER/TERORIST/COMMANDO/HIREDGUN/SS
-	.db FULL_GREEN
-	;27 RONIN/SAMURAI/HATAMOTO/DAIMYO/SHOGUN
-	.db FULL_BLUE
-	;28 TALKER/BUSYBODY/RUMORER/TATTLER/VIRAGO
-	.db FULL_RED
-	;29 HEADLESS/DUKE/DULLAHAN/BRAIN/REMOVED
-	.db FULL_PURPLE
-	;2A ORB RAT/TOMTOM/JERRIT/MAITIE/SPECTRAT
-	.db FULL_BROWN
-	;2B FLOWER/COSMOS/IRONROSE/REAPER/CACTUS
-	.db FULL_GREEN
-	;2C GUARD/KEEPER/MONITOR/SEARCHER/ALERT
-	.db FULL_GRAY
-	;2D BAZOOKA/75MM/105MM/150MM/210MM
-	.db FULL_GRAY
-	;2E TRIXSTER/CON MAN/BEGUILER/SWINDLER/HUSTLER
-	.db FULL_YELLOW
-	;2F AIRMAID/IRONLADY/VALKYRIE/IKEN/VENUS
-	.db FULL_GRAY
-	;30 ARTHUR
-	.db $01,$05,$01,$05,$05,$05,$05,$05, $01,$05,$01,$05,$01,$05,$01,$05
-	;31 SHARON
-	.db $01,$06,$01,$06,$01,$01,$01,$01, $01,$06,$01,$06,$01,$06,$01,$06
-	;32 GLORIA
-	.db $01,$04,$01,$04,$01,$04,$01,$04, $01,$04,$01,$04,$01,$04,$01,$04
-	;33 MYRON
-	.db FULL_BLUE
-	;34 CURTIS
-	.db $02,$03,$02,$03,$02,$03,$02,$03, $02,$03,$02,$03,$02,$03,$02,$03
-	;35 LARA?
-	.db FULL_RED
-	;36 FAYE?
-	.db FULL_PURPLE
-	;37 BORGIN
-	.db FULL_YELLOW
-	;38 THE OTHER GUY
-	.db FULL_BROWN
-	;39 WATERHAG
-	.db FULL_BLUE
-	;3A DWELG
-	.db FULL_BROWN
-	;3B PURELAND ISLAND
-	.db FULL_BLUE
-	;3C FLOAT SPELL
-	.db FULL_CYAN
-	;3D TALON
-	.db FULL_BLUE
-	;3E VESSEL
-	.db FULL_BLUE
-	;3F BOAT
-	.db FULL_BROWN
-.ENDS
+.DEFINE WRAM_SPRITE_IDS		WRAM1 + $0000
+.DEFINE WRAM_SPRITE_ATTR 	WRAM1 + $0200
+.DEFINE WRAM_SPRITE_CODE 	WRAM1 + $0C00
 
 .BANK 0 SLOT 0
 .ORGA $0018
@@ -261,17 +82,7 @@ SpriteRecordAddr:
 	cp $80
 	jp neq, _no
 _yes:
-	;Switch banks
-	di
-	ld a, WRAM_SPRITE_BANK
-	ldh (<SVBK), a
-
-	call WRAM_SPRITE_CODE + (SpriteRecordAddr_FarCode - SPRITECODE_FAR_START)
-	
-	;Switch banks back
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	ei
+    FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SpriteRecordAddr_FarCode - SPRITE_CODE_START)
 _no:
 	pop af
 	ret
@@ -290,23 +101,7 @@ SpriteSetPalette:
 	push bc
 
 	push af
-	
-	;Switch banks
-	di
-	ld a, WRAM_SPRITE_BANK
-	ldh (<SVBK), a
-	ld a, $11
-	ld ($2100), a
-
-	call WRAM_SPRITE_CODE + (SpriteFarCode - SPRITECODE_FAR_START)
-	
-	;Switch banks back
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	ld a, $01
-	ld ($2100), a
-	ei
-
+    FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SpriteFarCode - SPRITE_CODE_START)
 	pop af
 
 	;Combine upper metadata from (DE) and combine with lower metadata from B
@@ -336,7 +131,7 @@ SpriteUnsetAttributes:
 
 .BANK $10 SLOT 1
 .SECTION "Sprite_FarCode" FREE
-SPRITECODE_FAR_START:
+SPRITE_CODE_START:
 ;Original code loads tiles into VRAM, additionally we record where they came from to 05:D000 block
 ;BC is byte count
 ;DE is destination, must be $8000~$87FF
@@ -451,8 +246,7 @@ SpriteFarCode:
 	ret
 
 MenuSpriteFarCode:
-	ld a, $11
-	ld ($2100), a
+	SET_ROMBANK $11
 
 	;load $D000 + C * 2 into HL
 	ld h, $D0
@@ -472,23 +266,20 @@ MenuSpriteFarCode:
 	ld a, (hl)
 	ld b, a
 
-	ld a, $09
-	ld ($2100), a
+	SET_ROMBANK $09
 	ret
 
 _cancelMenuSprite:
 	;Fixes screwed up sprites in the continue menu, but does not colorize them.
 	xor a
 	ld b, a
-	ld a, $09
-	ld ($2100), a
+	SET_ROMBANK $09
 	ret
 
 BattleSpriteFarCode:
 	push bc
 	push af
-	ld a, $11
-	ld ($2100), a
+	SET_ROMBANK $11
 
 	;Get the tile number back
 	pop af
@@ -508,15 +299,14 @@ BattleSpriteFarCode:
 	ld a, (hl)
 	ld b, a
 
-	ld a, $02
-	ld ($2100), a
+	SET_ROMBANK $02
 	pop hl
 
 	ld a, b
 	pop bc
 
 	ret
-SPRITECODE_FAR_END:
+SPRITE_CODE_END:
 .ENDS
 
 ;Battle sprite code is very different, uses 8x16 sprites
@@ -546,22 +336,15 @@ SPRITECODE_FAR_END:
 BattleSpriteLoad:
 	;original code, writes tile index
 	ldi (hl), a
-
-	;Switch banks
-	push af
-	ld a, WRAM_SPRITE_BANK
-	ldh (<SVBK), a
-	pop af
-
-	call WRAM_SPRITE_CODE + (BattleSpriteFarCode - SPRITECODE_FAR_START)
-	
-	;Switch banks back
-	push af
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	pop af
-
+    FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + BattleSpriteFarCode - SPRITE_CODE_START)
 	ldi (hl), a
-
 	ret;
+.ENDS
+
+.SECTION "SpriteFarCodeLoader" FREE APPENDTO "FarCodeLoader"
+    ld a, WRAM_SPRITE_BANK
+    ld bc, SPRITE_CODE_END - SPRITE_CODE_START
+    ld de, WRAM_SPRITE_CODE
+    ld hl, SPRITE_CODE_START
+    call CopyFarCodeToWRAM
 .ENDS
