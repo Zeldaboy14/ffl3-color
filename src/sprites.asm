@@ -1,3 +1,4 @@
+.DEFINE WRAM_SPRITE_CODE		$D800
 ;Sprite tiles are found roughly between $10000 and $18000 in ROM.  We only care about them in $40 byte blocks
 
 .DEFINE FULL_GRAY	$00,$00,$00,$00,$00,$00,$00,$00, $00,$00,$00,$00,$00,$00,$00,$00

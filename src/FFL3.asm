@@ -34,46 +34,90 @@
 .UNBACKGROUND $3FFCE $3FFFF     ; Free space in bank $0F
 ; ...
 
-.include "definitions.asm"		; Definitions
 .include "macros.asm"			; Macros 
-.include "palettes.asm"
 
-.include "sprites.asm"
-.include "metatiles.asm"
-.include "textbox.asm"
-.include "font.asm"
-.include "fade.asm"
-.include "enemies.asm"
-.include "menu.asm"
-.include "battle.asm"
-.include "title.asm"
+.include "definitions.asm"		; Definitions
 .include "system.asm"
+.include "font.asm"
+.include "palettes.asm"
+;.include "metatiles.asm"
+;.include "menu.asm"
+;.include "battle.asm"
+;.include "sprites.asm"
+;.include "transition.asm"
+;.include "intro.asm"
+;.include "title.asm"
+
+
+;.include "metatiles.asm"
+
+;.include "sprites.asm"
+;.include "metatileattr.asm"
+;.include "textbox.asm"
+;.include "fade.asm"
+;.include "enemies.asm"
+;.include "menu.asm"
+;.include "battle.asm"
+;.include "title.asm"
+
+;TODO: Reduce CPU usage when scrolling horizontally - runs slightly under target speed on Analogue Pocket
+;TODO: Fix Analogue Pocket battle crash
+;TODO: Colorize continue menu sprites
+;TODO: Convert some of this stuff to use far calls and WRAM?
+
+.BANK $1F SLOT 1
+.ORGA $7FFF
+.SECTION "The End" OVERWRITE
+    .db $FF
+.ENDS
+
+;00000 Main code
+;04000 Unknown
+;08000 Spell sprites
+;0c000 font, NPC sprites, effect sprites
+;10000 Monster/Player Sprites
+;14000 Tiles
+;18000 Metatile data (and map data?)
+;1C000 Unknown
+;20000 Unknown
+;24000 Menu code
+;28000 Unknown
+;2C000 Battle code
+;30000 Unknown
+;34000 Unknown
+;38000 Unknown
+;3C000 Textbox code
 
 .BANK 0 SLOT 0
 .ORG $0201
 .SECTION "DxInitHook" OVERWRITE
-	call DxInit
+	jp DxInitialize
 .ENDS
+
+.UNBACKGROUND $0204 $023E
 
 .BANK $00 SLOT 0
 .SECTION "Init" FREE
-DxInit:
+DxInitialize:
 	;Set Fast CPU from main bank
 	ld a, 1
 	ldh ($4D), a
 	stop
 	nop
 
-	ld a, 0x10
-	ld (CHANGE_BANK), a
+Reboot:
+	ld sp, $CFFF
 
-	call Initialize
+	SET_ROMBANK $10
+	call InitializeSystem
+	SET_ROMBANK $01
 
-	ld a, 0x1
-	ld (CHANGE_BANK), a
+    SET_WRAMBANK WRAM_SCRATCH_BANK
+    call $D000 + FFL3Initialize - FFL3_CODE_START
+    RESET_WRAMBANK
 
-    call $374A          ; Replaced code
-    ret
+	call $7C79
+    jp $023F
 .ENDS
 
 .BANK $01 SLOT 1
@@ -199,25 +243,48 @@ TEST:
 	nop
 .ENDS
 
-.BANK $1F SLOT 1
-.ORGA $7FFF
-.SECTION "The End" OVERWRITE
-    .db $FF
+.BANK $00 SLOT 0
+.ORGA $39CC
+.SECTION "DontInitializeD000" OVERWRITE
+	ld hl, $C000
+	ld bc, $0100
 .ENDS
 
-;00000 Main code
-;04000 Unknown
-;08000 Spell sprites
-;0c000 font, NPC sprites, effect sprites
-;10000 Monster/Player Sprites
-;14000 Tiles
-;18000 Metatile data (and map data?)
-;1C000 Unknown
-;20000 Unknown
-;24000 Menu code
-;28000 Unknown
-;2C000 Battle code
-;30000 Unknown
-;34000 Unknown
-;38000 Unknown
-;3C000 Textbox code
+.BANK $10 SLOT 1
+.SECTION "TransplantedCode" FREE
+FFL3_CODE_START:
+FFL3Initialize:
+	call $3727
+	call $39B8
+	ld   a,$01
+	call $3910
+;	xor  a
+;	ldh  ($47),a
+;	ldh  ($48),a
+;	ldh  ($49),a
+	ld   hl,$9800
+	ld   bc,$0800
+	ld   a,$FF
+	call $3921
+	ld   hl,$11A2
+	call $3D46
+	ld   hl,$11E3
+	call $3D5A
+	xor  a
+	ldh  ($41),a
+	ld   a,$01
+	ldh  ($FF),a
+	ld   a,$C3
+	ldh  ($40),a
+	ei   
+    ret
+FFL3_CODE_END:
+.ENDS
+
+.SECTION "TransplantedFarCodeLoader" FREE APPENDTO "FarCodeLoader"
+    ld a, WRAM_SCRATCH_BANK
+    ld bc, FFL3_CODE_END - FFL3_CODE_START
+    ld de, $D000
+    ld hl, FFL3_CODE_START
+    call CopyFarCodeToWRAM
+.ENDS

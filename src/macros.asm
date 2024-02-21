@@ -21,6 +21,27 @@
 	pop af
 .ENDM
 
+.MACRO SWAP_BC_DE
+	push de
+	push bc
+	pop de
+	pop bc
+.ENDM
+
+.MACRO FARCALL ARGS WRAM_BANK, ADDRESS
+	call FarCall
+	.db WRAM_BANK
+    .dw ADDRESS
+.ENDM
+
+.MACRO FARCALL_EI ARGS WRAM_BANK, ADDRESS
+    push af
+    SET_WRAMBANK WRAM_BANK
+    pop af
+    call ADDRESS
+    RESET_WRAMBANK
+.ENDM
+
 .MACRO SET_ROMBANK ARGS ROMBANK
 	ld a, ROMBANK
 	ld (CHANGE_BANK), a
@@ -44,11 +65,4 @@
 .MACRO RESET_VRAMBANK
 	xor a
 	ldh (<VBK), a
-.ENDM
-
-.MACRO FAR_RAM_CALL ARGS RAMBANK, RAMADDR
-	rst $10
-	.db RAMBANK
-	.dw RAMADDR
-	ei
 .ENDM
