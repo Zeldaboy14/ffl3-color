@@ -40,7 +40,7 @@
 
 .include "sprites.asm"
 .include "metatileattr.asm"
-.include "map.asm"
+.include "metatiles.asm"
 .include "textbox.asm"
 .include "font.asm"
 .include "fade.asm"
