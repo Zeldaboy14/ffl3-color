@@ -44,6 +44,7 @@
 ;.include "menu.asm"
 ;.include "battle.asm"
 .include "sprites.asm"
+.include "textbox.asm"
 ;.include "transition.asm"
 ;.include "intro.asm"
 ;.include "title.asm"
@@ -53,7 +54,6 @@
 
 ;.include "sprites.asm"
 ;.include "metatileattr.asm"
-;.include "textbox.asm"
 ;.include "fade.asm"
 ;.include "enemies.asm"
 ;.include "menu.asm"
