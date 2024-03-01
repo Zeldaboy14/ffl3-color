@@ -1,6 +1,9 @@
-;Both buffers can occupy the same high byte block, because the MT buffer starts at $80
-.DEFINE METATILE_BUFFER_H $DF
-.DEFINE METATILE_STAGE_H $DF
+.include "metatileattr.asm"
+
+.DEFINE METATILE_ID_BUFFER $C880
+.DEFINE METATILE_ID_STAGE $C100
+.DEFINE METATILE_ATTR_BUFFER $CA80
+.DEFINE METATILE_ATTR_STAGE $CF00
 
 ;Game draws 24 tiles into the vram bg map for columns or rows, rather than all 32
 ;tilemap itself is loaded at d000 block
@@ -34,16 +37,15 @@
 
 .SECTION "LoadMetatileToBuffer_Code" FREE
 ;Overrides original code that reads a metatile from de (<- ROM6) and into hl (-> $C880).
-;Stores palette attribute data to block beginning at WRAM_METATILE_BANK::D880.
+;Stores palette attribute data to block beginning at CA80.
 LoadMetatileRowToBuffer:
 	push hl
 	push de
 ;	push bc ;Don't need to push BC because original code loads it later
 	
-	ld h, METATILE_BUFFER_H
+	ld h, >METATILE_ATTR_BUFFER
 	
 	SET_ROMBANK $16
-	SET_WRAMBANK WRAM_METATILE_BANK
 	
 	ld a, (de)
 	ldi (hl), a
@@ -62,29 +64,27 @@ LoadMetatileRowToBuffer:
 	ld (hl), a
 
 	SET_ROMBANK $06
-	RESET_WRAMBANK
 
 ;	pop bc
 	pop de
 	pop hl
 
-	;Replicates the three bytes that this call replaced above
+	;Original code
 	ld a, (de)
 	ldi (hl), a
 	inc de
 	ret
 
 ;Overrides original code that reads a metatile from de (<- ROM6) and into hl (-> $C880).
-;Stores palette attribute data to block beginning at WRAM_METATILE_BANK::D880.
+;Stores palette attribute data to block beginning at CA80.
 LoadMetatileColumnToBuffer:
 	push hl
 	push de
 ;	push bc ;Don't need to push BC because original code loads it later
 	
-	ld h, METATILE_BUFFER_H
+	ld h, >METATILE_ATTR_BUFFER
 
 	SET_ROMBANK $16
-	SET_WRAMBANK WRAM_METATILE_BANK
 
 	ld a, (de)
 	ldi (hl), a
@@ -101,13 +101,12 @@ LoadMetatileColumnToBuffer:
 	ld (hl), a
 
 	SET_ROMBANK $06
-	RESET_WRAMBANK
 
 ;	pop bc
 	pop de
 	pop hl
 
-	;Replicates the three bytes that this call replaced above
+	;Original code
 	ld a, (de)
 	ldi (hl), a
 	inc de
@@ -131,21 +130,15 @@ LoadMetatileColumnToBuffer:
 .BANK $00 SLOT 0
 .SECTION "LoadBufferToStage_Code" FREE
 LoadBufferToStage:
-	push hl
-	push de
-	ld d, METATILE_BUFFER_H
-	ld h, METATILE_STAGE_H
-	
-	SET_WRAMBANK WRAM_METATILE_BANK
+	ld d, >METATILE_ATTR_BUFFER
+	ld h, >METATILE_ATTR_STAGE
 	
 _loop:
 	ld a, (de)
-	ldi (hl), a
+	ld (hl), a
 
-	RESET_WRAMBANK
-
-	pop de
-	pop hl
+	ld d, >METATILE_ID_BUFFER
+	ld h, >METATILE_ID_STAGE
 	
 	;Currently this just replicates the three bytes that the call above overwrote
 	ld a, (de)
@@ -171,21 +164,17 @@ _loop:
 .BANK $00 SLOT 0
 .SECTION "UpdateMapVRAMCode" FREE
 UpdateMapVRAM:
-	push hl
-
-	ld h, METATILE_STAGE_H
+	ld h, >METATILE_ATTR_STAGE
 
 	SET_VRAMBANK 1
-	SET_WRAMBANK WRAM_METATILE_BANK
 
-	ldi a, (hl)
+	ld a, (hl)
 	ld (de), a
 
-	RESET_WRAMBANK
 	RESET_VRAMBANK
 	
-	pop hl
-	
+	ld h, >METATILE_ID_STAGE
+
 	;Currently this just replicates the three bytes that the call above overwrote
 	ldi a, (hl)
 	ld (de), a
@@ -246,23 +235,17 @@ SwapBGAndWindowVRAM:
 .ENDS
 
 .SECTION "LoadBufferToVRAM_Code" FREE
- LoadBufferToVRAM:
-	push hl
-	push de
-	
-	ld d, METATILE_BUFFER_H
+LoadBufferToVRAM:
+	ld d, >METATILE_ATTR_BUFFER
 		
 	SET_VRAMBANK 1
-	SET_WRAMBANK WRAM_METATILE_BANK
 
 _loop:
 	ld a, (de)
-	ldi (hl), a ;Todo: Replace this with useful color data from someplace!
+	ld (hl), a
 
-	pop de
-	pop hl
+	ld d, >METATILE_ID_BUFFER
 	
-	RESET_WRAMBANK
 	RESET_VRAMBANK
 	
 	;Currently this just replicates the three bytes that the call above overwrote

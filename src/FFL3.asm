@@ -39,7 +39,6 @@
 .include "palettes.asm"
 
 .include "sprites.asm"
-.include "metatileattr.asm"
 .include "metatiles.asm"
 .include "textbox.asm"
 .include "font.asm"
