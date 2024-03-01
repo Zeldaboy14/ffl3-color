@@ -43,7 +43,7 @@
 .include "metatiles.asm"
 ;.include "menu.asm"
 ;.include "battle.asm"
-;.include "sprites.asm"
+.include "sprites.asm"
 ;.include "transition.asm"
 ;.include "intro.asm"
 ;.include "title.asm"
