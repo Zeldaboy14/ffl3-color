@@ -49,8 +49,8 @@
 
 ;TODO: Reduce CPU usage when scrolling horizontally - runs slightly under target speed on Analogue Pocket
 ;TODO: Fix Analogue Pocket battle crash
-;TODO: Colorize continue menu sprites
-;TODO: Convert some of this stuff to use far calls and WRAM?
+;TODO: Fix ice spell color
+;TODO: Fix dead character color
 
 .BANK $1F SLOT 1
 .ORGA $7FFF
@@ -259,7 +259,7 @@ _loop:
 	ld a, b
 	or c
 	jr nz, _loop
-	
+
 	ld   hl,$11A2
 	call $3D46
 	ld   hl,$11E3
