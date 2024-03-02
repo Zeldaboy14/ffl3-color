@@ -82,7 +82,7 @@
 .BANK $09 SLOT 1
 .ORGA $40F7 ;Sets sprite attributes for sprites on the menu window
 .SECTION "WindowSpriteAttribute_Hook" OVERWRITE
-;	call WindowSpriteAttribute
+	call WindowSpriteAttribute
 .ENDS
 
 ;01:5460 looks like the function that loads sprites?

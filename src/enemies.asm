@@ -137,3 +137,11 @@ EnemyTileAttributes_Start:
 .db COLOR_ORANGE
 EnemyTileAttributes_End:
 .ENDS
+
+.SECTION "EnemyAttrFarCodeLoader" FREE APPENDTO "FarCodeLoader"
+	ld a, WRAM_BATTLE_BANK
+	ld bc, EnemyTileAttributes_End - EnemyTileAttributes_Start
+	ld de, WRAM_BATTLE_ENEMYTILEATTR_ADDR
+	ld hl, EnemyTileAttributes_Start
+	call CopyFarCodeToWRAM
+.ENDS

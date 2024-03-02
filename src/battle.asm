@@ -1,9 +1,10 @@
-
 .DEFINE WRAM_BATTLE_STUFF_ADDR				$D000
 .DEFINE WRAM_BATTLE_EFFECTIDS_ADDR			$DD00
 .DEFINE WRAM_BATTLE_CODE			 		$DE00
 .DEFINE WRAM_BATTLE_ENEMYTILEATTR_ADDR 		$DF00
 .DEFINE WRAM_BATTLE_ENEMYIDS_ADDR			$DFF0
+
+.include "enemies.asm"
 
 .DEFINE ENEMIES_TO_LOAD $CC6B
 .DEFINE ENEMYA_COUNT $CC36
@@ -22,7 +23,7 @@
 .SECTION "ClearPalette" FREE
 ClearPalette:
 	SET_WRAMBANK WRAM_BATTLE_BANK
-	call WRAM_BATTLE_CODE + ClearPalette_Far - BATTLECODE_FAR_START
+	call WRAM_BATTLE_CODE + ClearPalette_Far - BATTLE_CODE_START
 	RESET_WRAMBANK
 	call $218F
 	ret
@@ -416,15 +417,9 @@ _PaletteLoop:
     ret
 
 EnemyLoadToRam:
-	di
 	push af
-	ld a, WRAM_BATTLE_BANK
-	ldh (<SVBK), a
-	call WRAM_BATTLE_CODE + EnemyLoadToRam_Far - BATTLECODE_FAR_START
-	ld a, WRAM_DEFAULT_BANK
-	ldh (<SVBK), a
-	pop af
-	ei
+    FARCALL(WRAM_BATTLE_BANK, WRAM_BATTLE_CODE + EnemyLoadToRam_Far - BATTLE_CODE_START)
+    pop af
 
 	;Currently this just replicates the three bytes that the call above overwrote
 	ldi (hl), a
@@ -436,7 +431,7 @@ EnemyLoadToRam:
 
 .BANK $10 SLOT 1
 .SECTION "Battle_Code_Far" FREE	
-BATTLECODE_FAR_START:
+BATTLE_CODE_START:
 ClearPalette_Far:
     ld a, $80           ; Set index to first color + auto-increment
     ldh (<BCPS), a  ; 
@@ -475,5 +470,14 @@ EnemyLoadToRam_Far:
 	ld (hl), a
 
 	ret
-BATTLECODE_FAR_END:
+BATTLE_CODE_END:
+.ENDS
+
+.BANK $10 SLOT 1
+.SECTION "BattleFarCodeLoader" FREE APPENDTO "FarCodeLoader"
+    ld a, WRAM_BATTLE_BANK
+    ld bc, BATTLE_CODE_END - BATTLE_CODE_START
+    ld de, WRAM_BATTLE_CODE
+    ld hl, BATTLE_CODE_START
+    call CopyFarCodeToWRAM
 .ENDS

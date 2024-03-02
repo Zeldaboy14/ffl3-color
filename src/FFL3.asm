@@ -41,23 +41,10 @@
 .include "font.asm"
 .include "palettes.asm"
 .include "metatiles.asm"
-;.include "menu.asm"
-;.include "battle.asm"
+.include "menu.asm"
+.include "battle.asm"
 .include "sprites.asm"
 .include "textbox.asm"
-;.include "transition.asm"
-;.include "intro.asm"
-;.include "title.asm"
-
-
-;.include "metatiles.asm"
-
-;.include "sprites.asm"
-;.include "metatileattr.asm"
-;.include "fade.asm"
-;.include "enemies.asm"
-;.include "menu.asm"
-;.include "battle.asm"
 ;.include "title.asm"
 
 ;TODO: Reduce CPU usage when scrolling horizontally - runs slightly under target speed on Analogue Pocket
