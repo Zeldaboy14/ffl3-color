@@ -35,6 +35,16 @@ SetFadeWithHL:
 SetFade:
     FARCALL(WRAM_PALETTE_BANK, WRAM_PALETTE_CODE + SetFade_Far - PALETTE_CODE_START)
     ret
+
+;hl = Palette address
+LoadBGPalette:
+    FARCALL(WRAM_PALETTE_BANK, WRAM_PALETTE_CODE + LoadBGPalette_Far - PALETTE_CODE_START)
+    ret
+
+;hl = Palette address
+LoadOBJPalette:
+    FARCALL(WRAM_PALETTE_BANK, WRAM_PALETTE_CODE + LoadOBJPalette_Far - PALETTE_CODE_START)
+    ret
 .ENDS
 
 .BANK $10 SLOT 1
@@ -264,6 +274,40 @@ _LoopOBJPAL:
 _done:
     pop hl
     pop de
+    pop bc
+    pop af
+    ret
+
+;hl = Palette
+LoadBGPalette_Far:
+    push af
+    push bc
+    ld a, $80            ; Set index to first color + auto-increment
+    ldh (<BCPS),a       
+    ld b, 64             ; 32 color entries=0x40 bytes
+_LoopLoadBGPalette:
+    WAITBLANK
+    ldi a, (hl)
+    ldh (<BCPD),a
+    dec b
+    jr nz, _LoopLoadBGPalette
+    pop bc
+    pop af
+    ret
+
+;hl = Palette
+LoadOBJPalette_Far:
+    push af
+    push bc
+    ld a, $80            ; Set index to first color + auto-increment
+    ldh (<OCPS),a       
+    ld b, 64             ; 32 color entries=0x40 bytes
+_LoopLoadOBJPalette:
+    WAITBLANK
+    ldi a, (hl)
+    ldh (<OCPD),a
+    dec b
+    jr nz, _LoopLoadOBJPalette
     pop bc
     pop af
     ret

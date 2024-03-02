@@ -45,7 +45,7 @@
 .include "battle.asm"
 .include "sprites.asm"
 .include "textbox.asm"
-;.include "title.asm"
+.include "title.asm"
 
 ;TODO: Reduce CPU usage when scrolling horizontally - runs slightly under target speed on Analogue Pocket
 ;TODO: Fix Analogue Pocket battle crash
@@ -251,8 +251,15 @@ FFL3Initialize:
 ;	ldh  ($49),a
 	ld   hl,$9800
 	ld   bc,$0800
+_loop:
+	WAITBLANK
 	ld   a,$FF
-	call $3921
+	ldi (hl), a
+	dec bc
+	ld a, b
+	or c
+	jr nz, _loop
+	
 	ld   hl,$11A2
 	call $3D46
 	ld   hl,$11E3
