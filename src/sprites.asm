@@ -21,7 +21,7 @@
 .BANK 0 SLOT 0
 .ORGA $0018
 .SECTION "SpriteLoadTile_Hook" OVERWRITE
-	call SpriteRecordAddr
+	call SpriteRecordAddrRST18
 	jp $378A
 .ENDS
 
@@ -62,6 +62,23 @@
 	call PlayerNPCSpriteAttribute
 .ENDS
 
+.BANK $02 SLOT 1
+.ORGA $4163 ;Battle menu sprite apply attribute
+.SECTION "BattleSpriteLoad_Hook" OVERWRITE
+	call BattleSpriteAttribute
+.ENDS
+
+.ORGA $41CA ;Effect sprite record addr
+.SECTION "SpriteRecordAddr_Hook" OVERWRITE
+	call SpriteRecordAddrBank2
+.ENDS
+
+.ORGA $42A8
+.SECTION "EffectSpriteAttributes_Hook" OVERWRITE
+	call EffectSpriteAttributes
+	and a, $07
+.ENDS
+
 .BANK $09 SLOT 1
 .ORGA $40F7 ;Sets sprite attributes for sprites on the menu window
 .SECTION "WindowSpriteAttribute_Hook" OVERWRITE
@@ -94,14 +111,14 @@
 ;BC is byte count
 ;DE is destination, must be $8000~$87FF
 ;HL is source
-SpriteRecordAddr:
+SpriteRecordAddrRST18:
 	push af
 	ld a, d
 	and $F8
 	cp $80
 	jp neq, _no
 _yes:
-    FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SpriteRecordAddr_Far - SPRITE_CODE_START)
+    FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SpriteRecordAddrRST18_Far - SPRITE_CODE_START)
 _no:
 	pop af
 	ret
@@ -133,25 +150,60 @@ SpriteUnsetAttributes:
 	pop af
 	inc a 
 	ret
+.ENDS
 
+.BANK $02 SLOT 1
+.SECTION "SpriteBank02_Code" FREE
+SpriteRecordAddrBank2:
+	FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SpriteRecordAddrBank2_Far - SPRITE_CODE_START)
+	ret
+
+BattleSpriteAttribute:
+	;NOTE: This cannot be in RAM because it access D000.
+	ldi (hl), a
+	push hl
+
+	;load $D000 + A into HL
+	ld h, $D0
+	ld l, a
+
+	SET_WRAMBANK WRAM_SPRITE_BANK
+
+	;load metatile attribute from (HL) into original HL's (HL)
+	ld a, (hl)
+	pop hl
+	push bc
+	ld b, a
+	RESET_WRAMBANK
+	ld a, b
+	ldi (hl), a
+	pop bc
+
+	ret;
+
+EffectSpriteAttributes:
+	FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + EffectSpriteAttributes_Far - SPRITE_CODE_START
+	ret
 .ENDS
 
 .BANK $10 SLOT 1
 .SECTION "Sprite_FarCode" FREE
 SPRITE_CODE_START:
-;Original code loads tiles into VRAM, additionally we record where they came from to 05:D000 block
-;BC is byte count
-;DE is destination, must be $8000~$87FF
-;HL is source
-SpriteRecordAddr_Far:
-	push hl
-	push de
-	push bc
+
+SpriteRecordAddrBank2_Far:
+	push af
+	ld a, 2
+	call WRAM_SPRITE_CODE + SpriteRecordAddr_Far - SPRITE_CODE_START 
+	pop af
+	call $20FF
+	ret
+
+SpriteRecordAddrRST18_Far:
 	push af
 
 	;Bank is determined by one of two things - either the high nibble of the byte after the RST $18 call, or ($C0B1) if that was zero.
 	push hl
-	ld hl, sp+$12
+	ld hl, sp+$0C
 	ldi a, (hl)
 	push af
 	ld a, (hl)
@@ -159,19 +211,34 @@ SpriteRecordAddr_Far:
 	pop af
 	ld l, a
 	ld a, (hl)
+	pop hl
 	swap a
 	and $0F
-	jr nz, _go
+	jr nz, _else
 	ld a, ($C0B1)
-_go:
+_else:
 
 	;Make sure it's in range, since our hooks aren't good yet.
 	cp 2
-	jr lst, _cancel
+	jr lst, _done
 	cp 5
-	jr geq, _cancel
+	jr geq, _done
 
-	pop hl
+	call WRAM_SPRITE_CODE + SpriteRecordAddr_Far - SPRITE_CODE_START 
+
+_done:
+	pop af
+	ret
+
+;Original code loads tiles into VRAM, additionally we record where they came from to 05:D000 block
+;A is bank
+;BC is byte count
+;DE is destination, must be $8000~$87FF
+;HL is source
+SpriteRecordAddr_Far:
+	push hl
+	push de
+	push bc
 	push af
 
 	;HL = ((HL >> 4) | (BANK << 10)), the index of the 16-byte block in the $4000~$7FFF range.
@@ -187,6 +254,7 @@ _go:
 	srl h
 	rr l
 	pop af
+	push af
 	sub 2
   	sla a
   	sla a
@@ -206,7 +274,7 @@ _go:
 
 	;Calculate the destination address in WRAM
 	;Divide the tile vram address by $10 (size of a tile) and multiply by two.  Easiest way is to shift left five times and discard the low value.
-	;hl = $D000 | ((DE & $07FF) * $20)
+	;hl = $D000 | ((DE & $07FF) * $10)
 	ld h, d
 	ld l, e
 	add hl, hl
@@ -224,15 +292,12 @@ _loop:
 	inc de
 	dec b
 	jr nz, _loop
-_done:
+
 	pop af
 	pop bc
 	pop de
 	pop hl
 	ret
-_cancel:
-	pop af
-	jr _done
 
 PlayerNPCSpriteAttribute_Far:
 	ld b, a
@@ -325,6 +390,30 @@ WindowSpriteAttribute_Far:
 	dec b
 	ret
 
+;a is game-native attribute
+;c is count
+;hl is destination (C000~C09F)
+EffectSpriteAttributes_Far:
+	;Load sprite tile ID from (hl - 1) into A
+	dec hl
+	ldi a, (hl)
+	push hl
+
+	;load $D000 + A into HL
+	ld h, $D0
+	ld l, a
+
+	;load metatile attribute from HL
+	ld a, (hl)
+	pop hl
+
+	or b
+	ld b, a
+	ld a, ($DE04)
+	and a, $10 
+	or b
+	ret
+
 SPRITE_CODE_END:
 .ENDS
 
@@ -344,38 +433,24 @@ SPRITE_CODE_END:
 		;Loads C*2 (78) into (HL++)
 		;Loads A (0) into (HL++)
 
-.BANK 2 SLOT 1
-.ORGA $4163
-.SECTION "BattleSpriteLoad_Hook" OVERWRITE
-	call BattleSpriteAttribute
-.ENDS
+;02:41CA looks responsible for loading spell sprites - if we can trap the source
+;address we can probably colorize the first 30 OAM entries based on a lookup from
+;the source address
+;Looks like a lot of the basic spells share the same data block of 658C, each using
+;different subsets of the tiles
+;02:4FCA loads zero into the attribute byte
 
-.BANK 2 SLOT 1
-.SECTION "BattleSpriteAttribute_Code" FREE
-BattleSpriteAttribute:
-	;NOTE: This cannot be in RAM because it access D000.
-	ldi (hl), a
-	push hl
+;658C: Magma, Quake, Lit 1, Lit 2, Ice 2
+;68AC: Durend
+;6A2C: Sword
+;6AAC: XCalibur
+;6ACC: Gungnir
+;6C8C: Fatal
+;75CC: Aero
+;79EC: Flare, Fire 2, LitX
+;DE61: Numbers and Missed
 
-	;load $D000 + A into HL
-	ld h, $D0
-	ld l, a
-
-	SET_WRAMBANK WRAM_SPRITE_BANK
-
-	;load metatile attribute from (HL) into original HL's (HL)
-	ld a, (hl)
-	pop hl
-	push bc
-	ld b, a
-	RESET_WRAMBANK
-	ld a, b
-	ldi (hl), a
-	pop bc
-
-	ret;
-.ENDS
-
+.BANK $10 SLOT 1
 .SECTION "SpriteFarCodeLoader" FREE APPENDTO "FarCodeLoader"
     ld a, WRAM_SPRITE_BANK
     ld bc, SPRITE_CODE_END - SPRITE_CODE_START
