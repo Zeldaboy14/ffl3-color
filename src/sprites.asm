@@ -108,6 +108,11 @@ SetFlipX:
 	and a, $07
 .ENDS
 
+.ORGA $4F11
+.SECTION "BigEffectSpriteAttributes_Hook" OVERWRITE
+	call BigEffectSpriteAttributes
+.ENDS
+
 .BANK $03 SLOT 1
 .ORGA $79CE ;Default set effect sprite record addr
 .SECTION "SpriteRecordAddrBank3_Hook" OVERWRITE
@@ -191,7 +196,7 @@ SpriteRecordAddrBank2:
 	ret
 
 BattleSpriteAttribute:
-	;NOTE: This cannot be in RAM because it access D000.
+	;NOTE: This cannot be in RAM because it accesses D000.
 	ldi (hl), a
 	push hl
 
@@ -216,6 +221,38 @@ BattleSpriteAttribute:
 EffectSpriteAttributes:
 	FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + EffectSpriteAttributes_Far - SPRITE_CODE_START
 	ret
+
+;c count
+;hl source
+;de destination
+BigEffectSpriteAttributes:
+	;NOTE: This cannot be in RAM because it accesses D000.
+	push bc
+
+	;Load sprite tile ID from (de) into A
+	ld a, (de)
+	inc de
+	push hl
+
+	;load $D000 + A into HL
+	ld h, $D0
+	ld l, a
+
+	;load metatile attribute from HL
+	SET_WRAMBANK WRAM_SPRITE_BANK
+	ld a, (hl)
+	ld b, a
+	RESET_WRAMBANK
+	pop hl
+
+	ldi a, (hl)
+	and $E0
+	or b
+	ld (de), a
+
+	pop bc
+	ret
+
 .ENDS
 
 .BANK $03 SLOT 1
