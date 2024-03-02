@@ -47,10 +47,12 @@
 .include "textbox.asm"
 .include "title.asm"
 
-;TODO: Reduce CPU usage when scrolling horizontally - runs slightly under target speed on Analogue Pocket
 ;TODO: Fix Analogue Pocket battle crash
 ;TODO: Fix ice spell color
 ;TODO: Fix dead character color
+;TODO: Fix exit effect
+;TODO: Colorize the meat
+;TODO: Fix float/pureland/talon sprite colorization
 
 .BANK $1F SLOT 1
 .ORGA $7FFF

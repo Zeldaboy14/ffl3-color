@@ -38,8 +38,8 @@ EnemyLoad5ToVRAM:
 ;out how to hook someplace that we can be certain already is doing enemy tiles.  But as it is now,
 ;checking the range ONCE for five writes is avoiding the crash.
 	ld a, h
-	and a, $F0
-	cp $90
+	and a, $F8
+	cp $98
 	jr equ, _textbox
 	cp $D0
 	jr lst, _done
