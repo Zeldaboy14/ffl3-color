@@ -395,6 +395,7 @@ LoadBattlePalette:
 	ld a, 2
 	ld ($DFFF), a
 
+	di
     ld hl,WRAM_BATTLEPALETTE_ADDR
     ld a, $80           ; Set index to first color + auto-increment
     ldh (<BCPS), a  ; 
@@ -405,6 +406,7 @@ _PaletteLoop:
     ldh (<BCPD),a
     dec b
     jr nz,_PaletteLoop
+    ei
 
 	RESET_WRAMBANK
 
