@@ -48,11 +48,9 @@
 .include "title.asm"
 
 ;TODO: Fix Analogue Pocket battle crash
-;TODO: Fix ice spell color
 ;TODO: Fix dead character color
 ;TODO: Fix exit effect
-;TODO: Colorize the meat
-;TODO: Fix float/pureland/talon sprite colorization
+;TODO: Fix uncommon battle crash that seems to be due to sprite unset attribute
 
 .BANK $1F SLOT 1
 .ORGA $7FFF

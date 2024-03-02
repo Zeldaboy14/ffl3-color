@@ -71,9 +71,10 @@
 .ENDS
 
 .ORGA $3B33
-.SECTION "SpriteClean_Hook" OVERWRITE
-	;This might just be non-humanoid sprites?
-	call SpriteCleanPalette
+.SECTION "NPCSpriteAttribute_Hook" OVERWRITE
+	;This might just be non-humanoid sprites?  At one point I was just cleaning the palette here, but I think
+	;this is an okay place to set it.
+	call NPCSpriteAttribute
 	nop
 .ENDS
 
@@ -105,6 +106,12 @@ SetFlipX:
 .SECTION "EffectSpriteAttributes_Hook" OVERWRITE
 	call EffectSpriteAttributes
 	and a, $07
+.ENDS
+
+.BANK $03 SLOT 1
+.ORGA $79CE ;Default set effect sprite record addr
+.SECTION "SpriteRecordAddrBank3_Hook" OVERWRITE
+	call SpriteRecordAddrBank3
 .ENDS
 
 .BANK $09 SLOT 1
@@ -151,11 +158,8 @@ _no:
 	pop af
 	ret
 
-SpriteCleanPalette:
-	and a, $E0
-	ld (de), a
-	inc e
-	ldh a, ($97)
+NPCSpriteAttribute:
+	FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + NPCSpriteAttribute_Far - SPRITE_CODE_START)
 	ret
 
 PlayerNPCSpriteAttribute:
@@ -214,6 +218,14 @@ EffectSpriteAttributes:
 	ret
 .ENDS
 
+.BANK $03 SLOT 1
+.SECTION "SpriteBank03_Code" FREE
+SpriteRecordAddrBank3:
+	FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SpriteRecordAddrBank3_Far - SPRITE_CODE_START)
+	ret
+.ENDS
+
+
 .BANK $10 SLOT 1
 .SECTION "Sprite_FarCode" FREE
 SPRITE_CODE_START:
@@ -224,6 +236,15 @@ SpriteRecordAddrBank2_Far:
 	call WRAM_SPRITE_CODE + SpriteRecordAddr_Far - SPRITE_CODE_START 
 	pop af
 	call $20FF
+	ret
+
+SpriteRecordAddrBank3_Far:
+	;original code
+	ld bc, $04A0
+	push af
+	ld a, 3
+	call WRAM_SPRITE_CODE + SpriteRecordAddr_Far - SPRITE_CODE_START 
+	pop af
 	ret
 
 SpriteRecordAddrRST18_Far:
@@ -352,6 +373,33 @@ PlayerNPCSpriteAttribute_Far:
 	ldi (hl), a
 	inc de
 	ld a, l
+	ret
+
+NPCSpriteAttribute_Far:
+	push bc
+	and a, $E0 
+	ld b, a
+
+	;Load sprite tile ID from (de - 1) into A
+	dec de
+	ld a, (de)
+	inc de
+	push hl
+
+	;load $D000 + A into HL
+	ld h, $D0
+	ld l, a
+
+	;load metatile attribute from HL
+	ld a, (hl)
+	pop hl
+
+	;Original code
+	or b
+	pop bc
+	ld (de), a
+	inc e
+	ldh a, ($97)
 	ret
 
 PlayerSpriteAttribute_Far:
