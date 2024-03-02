@@ -429,9 +429,127 @@ EnemyLoadToRam:
 	ret
 .ENDS
 
+;Meat and parts
+.BANK $0E SLOT 1
+.ORGA $7DF4
+.SECTION "BattleMeat_Hook" OVERWRITE
+	FARCALL(WRAM_BATTLE_BANK, WRAM_BATTLE_CODE + MeatAttributes_Far - BATTLE_CODE_START)
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+.ENDS
+
+;Big Meat
+.BANK $0E SLOT 1
+.ORGA $7E39
+.SECTION "BattleBigMeat_Hook" OVERWRITE
+	FARCALL(WRAM_BATTLE_BANK, WRAM_BATTLE_CODE + BigMeatAttributes_Far - BATTLE_CODE_START)
+.ENDS
+
 .BANK $10 SLOT 1
 .SECTION "Battle_Code_Far" FREE	
 BATTLE_CODE_START:
+BigMeatAttributes_Far:
+	SET_VRAMBANK 1
+
+	WAITBLANK
+	ld a, 1
+	ld ($9869), a
+	ld ($986A), a
+	WAITBLANK
+	xor a
+	ld ($986B), a
+	WAITBLANK
+	ld a, 1
+	ld ($9888), a
+	ld ($9889), a
+	WAITBLANK
+	ld a, 1
+	ld ($988A), a
+	ld ($988B), a
+	WAITBLANK
+	ld a, 1
+	ld ($98A8), a
+	ld ($98A9), a
+	WAITBLANK
+	ld a, 1
+	ld ($98AA), a
+	ld ($98AB), a
+	WAITBLANK
+	xor a
+	ld ($98C8), a
+	WAITBLANK
+	ld a, 1
+	ld ($98C9), a
+	ld ($98CA), a
+
+	RESET_VRAMBANK
+
+	ld hl, $7E66
+	ld bc, $1042
+	ret
+
+MeatAttributes_Far:
+	push bc
+	ld a, l
+	cp $CF
+	jr neq, _meat
+_parts:
+	ld a, 0
+	jr _colorize
+_meat:
+	ld a, 1
+_colorize:
+	ld b, a
+
+	push bc
+	call $20FF
+	pop bc
+	;call $3A6B ;I think this just waits for blank, but we don't need to 'cause we're checking ourselves
+	ld hl, $9889
+	ld de, $0020
+
+	SET_VRAMBANK 1
+	push hl
+	WAITBLANK
+	ld a, b
+	ldi (hl), a
+	ldd (hl), a
+	add hl, de
+	WAITBLANK
+	ld a, b
+	ldi (hl), a
+	ld (hl), a
+	pop hl
+	RESET_VRAMBANK
+
+	WAITBLANK
+	xor a
+	ldi (hl), a
+	ld a, $02
+	ldd (hl), a
+	add hl, de
+	WAITBLANK
+	ld a, $01
+	ldi (hl), a
+	ld (hl), $03
+
+	pop bc
+	ret
+
 ClearPalette_Far:
     ld a, $80           ; Set index to first color + auto-increment
     ldh (<BCPS), a  ; 
