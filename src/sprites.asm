@@ -50,6 +50,26 @@
 	set 5, (hl)
 .ENDS
 
+.ORGA $23F4
+.SECTION "SpriteUpperLeftSetXFlip_Replacement23F6" OVERWRITE
+	call SetFlipX
+.ENDS
+
+.ORGA $23FB
+.SECTION "SpriteLowerLeftSetXFlip_Replacement23FB" OVERWRITE
+	call SetFlipX
+.ENDS
+
+.ORGA $2403
+.SECTION "SpriteUpperRightSetXFlip_Replacement2403" OVERWRITE
+	call SetFlipX
+.ENDS
+
+.ORGA $240A
+.SECTION "SpriteLowerRightSetXFlip_Replacement240A" OVERWRITE
+	call SetFlipX
+.ENDS
+
 .ORGA $3B33
 .SECTION "SpriteClean_Hook" OVERWRITE
 	;This might just be non-humanoid sprites?
@@ -60,6 +80,14 @@
 .ORGA $3BFA ;Sets sprite attribute for players and/or NPCs
 .SECTION "PlayerNPCSpriteAttribute_Hook" OVERWRITE
 	call PlayerNPCSpriteAttribute
+.ENDS
+
+.SECTION "SetFlipX" FREE
+SetFlipX:
+	inc hl
+	ldi (hl), a
+	set 5, (hl)
+	ret
 .ENDS
 
 .BANK $02 SLOT 1
