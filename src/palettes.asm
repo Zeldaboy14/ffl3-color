@@ -47,7 +47,7 @@ InitialBGPal:
     .dw $6A2D,$7FFF,$7353,$4100
     .dw $110C,$535C,$3214,$0000
     .dw $3A56,$6B9E,$5B1A,$0000
-    .dw $723A,$7FFF,$6A9F,$0000
+    .dw $6A2D,$7FFF,$7353,$5376
     .dw $2108,$4000,$5AD6,$7FFF
 InitialOBJPal:
     .dw $7FFF,$7FFF,$6B5A,$0000
