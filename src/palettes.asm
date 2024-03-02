@@ -227,16 +227,13 @@ _notzero:
 _dontresetpalette:
 
     ld hl, WRAM_BGPALETTE_ADDR
-    ldh a, ($8B) ;FFL2 battle flag
-    and $02
-    ld b, a
-    ldh a, ($E0) ;Our title screen flag
-    add b
+    ld a, ($DFFF)
     swap a
     sla a
     sla a
     add a, l
     ld l, a
+
 
 _LoadBGPal:
     ;HL = HL + (0x100 * c)
