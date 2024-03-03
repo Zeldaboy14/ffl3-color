@@ -50,22 +50,34 @@
 	set 5, (hl)
 .ENDS
 
-.ORGA $23F4
+.ORGA $2374
+.SECTION "SeamonkSprite_Hook2374" OVERWRITE
+	call SeamonkUnflip
+.ENDS
+
+.UNBACKGROUND $23D4 $23E6
+.ORGA $23CD ;For sprites like Seamonks (I think they're the ones that don't wiggle 1 pixel left/right?)
+.SECTION "SeamonkSprite_Hook23CD" OVERWRITE
+	FARCALL(WRAM_SPRITE_BANK, WRAM_SPRITE_CODE + SeamonkSpriteAttribute_Far - SPRITE_CODE_START)
+	ret
+.ENDS
+
+.ORGA $23F4 ;For sprites like Talkers
 .SECTION "SpriteUpperLeftSetXFlip_Replacement23F6" OVERWRITE
 	call SetFlipX
 .ENDS
 
-.ORGA $23FB
+.ORGA $23FB ;For sprites like Talkers
 .SECTION "SpriteLowerLeftSetXFlip_Replacement23FB" OVERWRITE
 	call SetFlipX
 .ENDS
 
-.ORGA $2403
+.ORGA $2403 ;For sprites like Talkers
 .SECTION "SpriteUpperRightSetXFlip_Replacement2403" OVERWRITE
 	call SetFlipX
 .ENDS
 
-.ORGA $240A
+.ORGA $240A ;For sprites like Talkers
 .SECTION "SpriteLowerRightSetXFlip_Replacement240A" OVERWRITE
 	call SetFlipX
 .ENDS
@@ -84,6 +96,12 @@
 .ENDS
 
 .SECTION "SetFlipX" FREE
+SeamonkUnflip:
+	ldi (hl), a
+	res 5, (hl)
+	inc a
+	ret
+	
 SetFlipX:
 	inc hl
 	ldi (hl), a
@@ -465,23 +483,42 @@ PlayerSpriteAttribute_Far:
 	pop bc
 	ret
 
-MenuSpriteAttribute_Far:
-	;Load sprite tile ID from (hl - 1) into A
-	dec hl
-	ldi a, (hl)
-	push hl
+SeamonkSpriteAttribute_Far:
+	ld de, $0003
+	ld a, ($CD3F)
+	ld b, $20
+	add a, $02
+	ldi (hl), a
+	call WRAM_SPRITE_CODE + _seamonkAttribute - SPRITE_CODE_START
+	add hl, de
+	inc a
+	ldi (hl), a
+	call WRAM_SPRITE_CODE + _seamonkAttribute - SPRITE_CODE_START
+	add hl, de
+	sub a, $03
+	ldi (hl), a
+	call WRAM_SPRITE_CODE + _seamonkAttribute - SPRITE_CODE_START
+	add hl, de
+	inc a
+	ldi (hl), a
+	call WRAM_SPRITE_CODE + _seamonkAttribute - SPRITE_CODE_START
+	ret 
 
+_seamonkAttribute:
+	push af
+	push hl
 	;load $D000 + A into HL
 	ld h, $D0
 	ld l, a
 
-	;load metatile attribute from HL
-	ld a, (hl)
+	;load metatile attribute from HL into B
+	ld a, b
+	and $E0
+	or (hl)
 	pop hl
-
-	;Original code
 	ld (hl), a
-	ret
+	pop af
+ 	ret
 
 WindowSpriteAttribute_Far:
 	;Load sprite tile ID from (hl - 1) into A
