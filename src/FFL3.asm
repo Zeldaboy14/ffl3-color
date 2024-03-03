@@ -49,10 +49,8 @@
 .include "textbox.asm"
 .include "title.asm"
 
-;TODO: Fix Analogue Pocket battle crash
 ;TODO: Fix dead character color
 ;TODO: Fix exit effect
-;TODO: Fix uncommon battle crash that seems to be due to sprite unset attribute
 
 .BANK $1F SLOT 1
 .ORGA $7FFF
@@ -117,104 +115,15 @@ Reboot:
 .ENDS
 
 .BANK $01 SLOT 1
-.ORGA $5eb8
-.SECTION "Disable_Battle_Effect_Entirely" OVERWRITE
-;	ret
+.ORGA $5ECC
+.SECTION "FixAnaloguePocketCrash" OVERWRITE
+_waitnextframe:
+	;This replaces a wait for line 0 that was never getting reached on AP.
+	;It makes the battle load effect too fast, but also making it faster makes it less annoying so...
+	ldh a, ($44)
+	and a, $FC
+	jr nz, _waitnextframe
 .ENDS
-
-.BANK $01 SLOT 1
-.ORGA $5EB8
-.SECTION "Disable_Battle_Call_To_6013" OVERWRITE
-;	nop;
-;	nop
-;	nop
-.ENDS
-
-.BANK $01 SLOT 1
-.ORGA $5F0F
-.SECTION "Disable_Battle_Call_To_4006" OVERWRITE
-;	nop
-;	nop
-;	nop
-.ENDS
-
-.BANK $01 SLOT 1
-.ORGA $603b
-.SECTION "Experiment2" OVERWRITE
-	call TEST
-.ENDS
-
-.BANK $00 SLOT 0
-.SECTION "Experiment" FREE
-TEST:
-	ld a, $E3
-	;ldh ($40), a
-	ret
-.ENDS
-
-;00:10F0 calls the battle transition effect
-;01:5EB8 is the battle transition effect
-;01:6013 is the initial transition effect setup
-;00:3A24 clears every fourth byte C000~C09C (shadow OAM X) hiding all the sprites
-
-;.SECTION "SetIRQRoutines_FixedCode" FREE
-;SetIRQRoutines:
-;	di
-;	jp $1F8D
-;.ENDS
-;
-;.ORGA $1B57
-;.SECTION "SetIRQRoutines_Hook1B57" OVERWRITE
-;	;call SetIRQRoutines
-;	nop
-;	nop
-;	nop
-;
-;.ENDS
-;.ORGA $1B60
-;.SECTION "SetIRQRoutines_Hook1B60" OVERWRITE
-;	;call SetIRQRoutines
-;		nop
-;	nop
-;	nop
-;
-;.ENDS
-;.ORGA $1DE5
-;.SECTION "SetIRQRoutines_Hook1DE5" OVERWRITE
-;;	call SetIRQRoutines
-;	nop
-;	nop
-;	nop
-;.ENDS
-;.ORGA $1DEE
-;.SECTION "SetIRQRoutines_Hook1DEE" OVERWRITE
-;;	call SetIRQRoutines
-;	nop
-;	nop
-;	nop
-;
-;.ENDS
-;.ORGA $1E20
-;.SECTION "SetIRQRoutines_Hook1E20" OVERWRITE
-;	;call SetIRQRoutines
-;	nop
-;	nop
-;	nop
-;.ENDS
-;.ORGA $1E29
-;.SECTION "SetIRQRoutines_Hook1E29" OVERWRITE
-;	;call SetIRQRoutines
-;	;nop
-;	;nop
-;	;nop
-;.ENDS
-
-;1E06 looks like "Pop IRQ handlers"
-;CDD0 = shadow $FFFF
-;CDCF = shadow $FF41
-;CDCA = shadow $FF45
-;1DD0 looks like "Set IRC handlers"
-;1E06 again?
 
 .BANK $09 SLOT 1
 .ORGA $4ECF

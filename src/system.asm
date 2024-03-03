@@ -6,6 +6,7 @@
 .DEFINE SHADOW_H	$F6
 .DEFINE SHADOW_L	$F7
 .DEFINE FARJUMP		$FFF8
+.DEFINE IS_ANALOGUE_POCKET $FFFB
 
 .BANK $00 SLOT 0
 .SECTION "FarCall_Code" FREE
@@ -91,6 +92,60 @@ _copyCodeLoop:
 	ret
 .ENDS
 
+.SECTION "DetectAnaloguePocket" FREE
+DetectAnaloguePocket:
+; Identify emulators and store them in wEmu
+; Do these checks only in GBC mode, both to avoid damaging DMGs,
+; and because they're not supported
+    xor a
+    ldh (<IS_ANALOGUE_POCKET), a
+    ld a, ($0143)
+    cp $C0
+    ret nz
+.wait
+    ldh a, ($44)
+    cp 141
+    jr nz, .wait
+.wait2
+    ldh a, ($44)
+    cp 142
+    jr nz, .wait2
+
+.wait_mode_3
+    ; Wait to be in mode 3
+    ldh a, ($41)
+    and 3
+    cp 3
+    jr nz, .wait_mode_3
+
+    ; Turn off lcd in mode 3
+    xor a
+    ldh ($40), a
+
+    ; Change palette to 0
+    ldh ($68), a
+    ldh ($69), a
+    ldh a, ($69)
+
+    ; If the palette hasn't changed, it's an AP!
+    push af
+    
+    ; Set the palette back
+    ld a, $ff
+    ldh ($69), a
+
+    ; Turn lcd back on
+    ld a, $80
+    ldh ($40), a
+
+    pop af
+    and a
+    ret z
+    ;ld a, EMU_AP
+    ld (<IS_ANALOGUE_POCKET), a
+    ret
+.ENDS
+
 .SECTION "FarCodeLoader" FREE PRIORITY -1
 InitializeSystem:
 	;Several initialize sequences strung together without rets
@@ -130,6 +185,8 @@ _clearVRAM:
 	or c
 	jr nz, _clearVRAM
 	RESET_VRAMBANK
+
+	call DetectAnaloguePocket
 	
 InitializeFarCode:
 	;Set default palette to something useful for testing
