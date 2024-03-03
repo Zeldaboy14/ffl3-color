@@ -18,6 +18,8 @@
 .COMPUTEGBCHECKSUM              ; Computes the ROM checksum ($014E-$014F)
 
 .BACKGROUND "Final Fantasy Legend III (USA).gb"
+
+.NAME "SAGA3 DX"
 .UNBACKGROUND $3E70 $3FFF       ; Free space in bank $00
 .UNBACKGROUND $7FF4 $7FFF       ; Free space in bank $01
 .UNBACKGROUND $BFAC $BFFF       ; Free space in bank $02 (Including 4 X tiles that don't look important)
@@ -80,6 +82,13 @@
 .SECTION "DxInitHook" OVERWRITE
 	jp DxInitialize
 .ENDS
+
+.BANK $0F SLOT 1
+.ORGA $7FC8
+.SECTION "GameoverVector" OVERWRITE
+    jp nz, Reboot
+.ENDS
+
 
 .UNBACKGROUND $0204 $023E
 
