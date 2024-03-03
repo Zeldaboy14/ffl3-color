@@ -1,3 +1,12 @@
+.BANK $00 SLOT 0
+.ORGA $35B8
+.SECTION "TextboxTweak_Hook35B8" OVERWRITE
+	ld a, $A6
+.ENDS
+.ORGA $365E
+.SECTION "TextboxTweak_Hook365E" OVERWRITE
+	ld a, $A6
+.ENDS
 
 .BANK 15 SLOT 1
 .ORGA $794f
