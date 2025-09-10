@@ -1,6 +1,7 @@
 ; ****************************************
 ; *** DEFINITIONS & ROM INITIALIZATION ***
 ; ****************************************
+.DEFINE BOOTUP_A_CGB $11
 
 .MEMORYMAP
     DEFAULTSLOT 1
@@ -12,7 +13,7 @@
 .ROMBANKSIZE $4000
 .ROMBANKS 32                    ; 32 banks
 .ROMSIZE 4
-.ROMGBCONLY                     ; Writes $C0 ("GBC only") into $0143 (CGB flag)
+.ROMGBC		                    ; Writes $C0 ("GBC only") into $0143 (CGB flag)
 .CARTRIDGETYPE $1B				; MBC5 + RAM + Battery
 .COMPUTEGBCOMPLEMENTCHECK       ; Computes the ROM complement check ($014D)
 .COMPUTEGBCHECKSUM              ; Computes the ROM checksum ($014E-$014F)
@@ -78,7 +79,7 @@
 .BANK 0 SLOT 0
 .ORG $0201
 .SECTION "DxInitHook" OVERWRITE
-	jp DxInitialize
+     jp DxInitialize
 .ENDS
 
 .BANK $0F SLOT 1
@@ -87,19 +88,30 @@
     jp nz, Reboot
 .ENDS
 
-
 .UNBACKGROUND $0204 $023E
 
 .BANK $00 SLOT 0
 .SECTION "Init" FREE
 DxInitialize:
+    ;ldh a,(<hGameboyType)
+    ;or a
+    ;jr nz, .CGB_OK
+    ;call DMGLockout
+;.CGB_OK:
 	;Set Fast CPU from main bank
-	ld a, 1
+	cp BOOTUP_A_CGB
+	jr   nz, .notGBC                              ;; 00:0152 $20 $1A
+	ldh a, (<hGameboyType)
+	ld a, $01 ; initally 1
 	ldh ($4D), a
 	stop
 	nop
-
+	
+.notGBC 
+	xor  a ; isGBC = false                        ;; 00:016E $AF
+	
 Reboot:
+	;ldh a, [hIsGBC] ; Save isGBC value           ;; 00:016F $E0 $FE
 	ld sp, $CFFF
 
 	SET_ROMBANK $10
@@ -199,4 +211,14 @@ FFL3_CODE_END:
     ld de, $D000
     ld hl, FFL3_CODE_START
     call CopyFarCodeToWRAM
+.ENDS
+
+.BANK 8 SLOT 0
+.ORG $201
+.SECTION "NonGBCLockout" OVERWRITE
+DMGLockout:
+    ldh a, (<hGameboyType)  
+	or a
+	ret nz
+	ld c, $0
 .ENDS
