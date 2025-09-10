@@ -219,14 +219,15 @@ UndoSwordOAM:
 UndoSwordOAMEnd:
 
 TitlePal:
-    .dw $1578,$4008,$1090,$129F
-    .dw $0000,$3827,$1090,$7FFF
-    .dw $0000,$3026,$1090,$7FFF
-    .dw $0000,$2825,$1090,$7FFF
-    .dw $0000,$2024,$1090,$4210
-    .dw $0000,$1803,$1090,$4210
-    .dw $0000,$1002,$1090,$4210
-    .dw $0000,$0801,$1090,$4210
+    ;.dw $4009,$6FDF,$4C09,$2006 ; Title Logo
+    .dw $400F,$6FDF,$48D2,$1044 ; Title Logo
+    .dw $3A54,$6FDF,$0842,$0000 ; new game
+    .dw $3A54,$6FDF,$0842,$2807 ; spacer
+    .dw $3A54,$6FDF,$0842,$0000 ; continue
+    .dw $3A54,$6FDF,$0842,$2807 ; spacer
+    .dw $3A54,$6FDF,$6FDF,$0000 ; copyright
+    .dw $3A54,$6FDF,$6FDF,$0000 ; spacer
+    .dw $3A54,$6FDF,$6FDF,$0000 ; licensed
 TitlePalEnd:
 TITLE_DATA_END:
 .ENDS
